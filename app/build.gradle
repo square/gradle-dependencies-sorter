@@ -1,0 +1,77 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+  id 'com.squareup.convention'
+  id 'application'
+  id 'org.jetbrains.kotlin.jvm'
+  id 'groovy'
+  id 'com.github.johnrengelman.shadow'
+  id 'maven-publish'
+}
+
+application {
+  mainClass.set('com.squareup.sort.MainKt')
+}
+
+dependencies {
+  implementation project(':sort')
+  implementation 'info.picocli:picocli:4.6.2'
+  implementation 'org.slf4j:slf4j-simple:2.0.0-alpha7'
+
+  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+}
+
+tasks.named('shadowJar', ShadowJar) {
+  doNotTrackState(
+    '''\
+      The jar remains up to date even when changing the excludes.
+      See also https://github.com/johnrengelman/shadow/issues/62#issuecomment-877728948
+      '''.stripIndent()
+  )
+
+  group = 'Build'
+  description = 'Produces a fat jar'
+  reproducibleFileOrder = true
+
+  from sourceSets.main.output
+  from project.configurations.runtimeClasspath
+
+  exclude 'META-INF/maven/**'
+}
+
+tasks.named('installShadowDist').configure {
+  notCompatibleWithConfigurationCache('Uses Project instance')
+}
+
+def testRepo = layout.buildDirectory.dir('for-tests')
+
+tasks.register('cleanTestRepo', Delete) {
+  delete testRepo
+}
+
+publishing {
+  publications {
+    distZip(MavenPublication) {
+      artifactId = 'sort-gradle-dependencies-dist'
+      artifact shadowDistZip
+    }
+    app(MavenPublication) {
+      artifactId = 'sort-gradle-dependencies-app'
+      from components['java']
+    }
+  }
+  repositories {
+    maven {
+      name = 'tests'
+      url = testRepo
+    }
+  }
+}
+
+// We only want to publish the shadowed component (the "fat jar")
+def javaComponent = components['java'] as AdhocComponentWithVariants
+['apiElements', 'runtimeElements'].each { unpublishable ->
+  javaComponent.withVariantsFromConfiguration(configurations[unpublishable]) {
+    skip()
+  }
+}

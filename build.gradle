@@ -1,0 +1,4 @@
+plugins {
+  // This plugin should be loaded in a single classloader.
+  id 'org.jetbrains.kotlin.jvm' apply false
+}

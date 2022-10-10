@@ -1,0 +1,33 @@
+plugins {
+  id 'com.squareup.convention'
+  id 'java-gradle-plugin'
+  id 'org.jetbrains.kotlin.jvm'
+  id 'maven-publish'
+  id 'groovy'
+}
+
+gradlePlugin {
+  plugins {
+    sortDependenciesPlugin {
+      id = 'com.squareup.sort-dependencies'
+      implementationClass = 'com.squareup.sort.SortDependenciesPlugin'
+    }
+  }
+}
+
+dependencies {
+  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+}
+
+tasks.named('test') {
+  // We need to publish the app to a local repo for use by the tests, and then clean that up afterwards.
+  dependsOn ':app:publishAppPublicationToTestsRepository'
+  finalizedBy ':app:cleanTestRepo'
+
+  systemProperty 'rootDir', rootDir.absolutePath
+}
+
+tasks.named('processResources') {
+  from 'version.txt'
+  expand(version: VERSION)
+}

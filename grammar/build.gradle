@@ -1,0 +1,31 @@
+plugins {
+  id 'com.squareup.convention'
+  id 'antlr'
+  id 'groovy'
+}
+
+// https://docs.gradle.org/current/userguide/antlr_plugin.html
+// https://discuss.gradle.org/t/using-gradle-2-10s-antlr-plugin-to-import-an-antlr-4-lexer-grammar-into-another-grammar/14970/6
+/* Ignore implied package structure for .g4 files and instead use this for all generated source. */
+def pkg = 'com.squareup.grammar'
+def dir = pkg.replace('.', '/')
+def antlrSrc = "src/main/antlr/$dir".toString()
+tasks.named('generateGrammarSource', AntlrTask) {
+  outputDirectory = file(layout.buildDirectory.dir("generated-src/antlr/main/$dir"))
+  arguments += [
+      // Specify the package declaration for generated Java source
+      '-package', pkg,
+      // Generated Java source should go into the outputDirectory, regardless of package structure
+      '-Xexact-output-dir',
+      // Specify the location of "libs"; i.e., for grammars composed of multiple files
+      '-lib', antlrSrc
+  ]
+}
+
+dependencies {
+  def antlrVersion = '4.10.1'
+  antlr "org.antlr:antlr4:$antlrVersion"
+  api "org.antlr:antlr4-runtime:$antlrVersion"
+
+  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+}

@@ -1,0 +1,15 @@
+plugins {
+  id 'com.squareup.convention'
+  id 'org.jetbrains.kotlin.jvm'
+  id 'groovy'
+}
+
+kotlin {
+  explicitApi()
+}
+
+dependencies {
+  api project(':grammar')
+
+  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+}
