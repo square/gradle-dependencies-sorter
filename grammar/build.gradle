@@ -23,9 +23,8 @@ tasks.named('generateGrammarSource', AntlrTask) {
 }
 
 dependencies {
-  def antlrVersion = '4.10.1'
-  antlr "org.antlr:antlr4:$antlrVersion"
-  api "org.antlr:antlr4-runtime:$antlrVersion"
+  antlr libs.antlr.core
+  api libs.antlr.runtime
 
-  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+  testImplementation libs.spock
 }

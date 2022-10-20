@@ -15,10 +15,10 @@ application {
 
 dependencies {
   implementation project(':sort')
-  implementation 'info.picocli:picocli:4.6.2'
-  implementation 'org.slf4j:slf4j-simple:2.0.0-alpha7'
+  implementation libs.picocli
+  implementation libs.slf4j
 
-  testImplementation 'org.spockframework:spock-core:2.1-groovy-3.0'
+  testImplementation libs.spock
 }
 
 tasks.named('shadowJar', ShadowJar) {

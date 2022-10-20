@@ -37,9 +37,8 @@ dependencies {
   implementation(platform('org.jetbrains.kotlin:kotlin-bom'))
 
   // JUnit5 / Jupiter Platform stuff
-  testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.2') {
-    because 'For running tests on the JUnit5 Jupiter platform'
-  }
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.2'
-  testImplementation 'com.google.truth:truth:1.1.3'
+  testImplementation libs.junit.api
+  testRuntimeOnly libs.junit.engine
+
+  testImplementation libs.truth
 }
