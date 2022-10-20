@@ -48,7 +48,30 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 
 ## Build it
 
-TODO.
+### Publish everything to maven local
+
+```shell
+./gradlew publishToMavenLocal
+```
+
+This will push all of this project's artifacts to `~/.m2/repository/`.
+
+### Build zip distribution
+
+```shell
+./gradlew :app:shadowDistZip
+```
+
+This creates a zip file of the distribution at `app/build/distributions/`. This archive may be installed anywhere you 
+like.
+
+### Install CLI app
+
+```shell
+./gradlew :app:installShadowDist
+```
+
+This will install the app to `app/build/install/app-shadow/`.
 
 ## Pre-OSS Contributors
 * https://github.com/autonomousapps
