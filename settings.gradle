@@ -18,7 +18,7 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = 'dependencies-sorter'
+rootProject.name = 'gradle-dependencies-sorter'
 
 gradleEnterprise {
   buildScan {
