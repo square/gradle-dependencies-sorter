@@ -34,6 +34,10 @@ tasks.named('shadowJar', ShadowJar) {
   exclude 'META-INF/maven/**'
 }
 
+tasks.withType(CreateStartScripts).configureEach {
+  applicationName = 'sort'
+}
+
 tasks.named('installShadowDist').configure {
   notCompatibleWithConfigurationCache('Uses Project instance')
 }
