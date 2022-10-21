@@ -1,15 +1,20 @@
 //file:noinspection UnnecessaryQualifiedReference
 plugins {
   id 'org.jetbrains.kotlin.jvm'
+  id 'groovy'
+  id 'maven-publish'
+  id 'org.gradle.signing'
 }
 
 group = providers.gradleProperty('GROUP').get()
 version = providers.gradleProperty('VERSION').get()
 
-def javaVersion = JavaVersion.VERSION_11
+def versionCatalog = extensions.getByType(VersionCatalogsExtension).named('libs')
+def javaVersion = versionCatalog.findVersion('java').orElseThrow().requiredVersion
 java {
-  sourceCompatibility = javaVersion
-  targetCompatibility = javaVersion
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(javaVersion))
+  }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {

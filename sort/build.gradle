@@ -1,7 +1,5 @@
 plugins {
-  id 'com.squareup.convention'
-  id 'org.jetbrains.kotlin.jvm'
-  id 'groovy'
+  id 'com.squareup.lib'
 }
 
 kotlin {

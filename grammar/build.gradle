@@ -1,7 +1,6 @@
 plugins {
-  id 'com.squareup.convention'
+  id 'com.squareup.lib'
   id 'antlr'
-  id 'groovy'
 }
 
 // https://docs.gradle.org/current/userguide/antlr_plugin.html

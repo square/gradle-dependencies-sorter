@@ -1,0 +1,12 @@
+//file:noinspection UnnecessaryQualifiedReference
+plugins {
+  id 'com.squareup.base'
+}
+
+java {
+  // We specifically don't want either of these artifacts on the app project
+  withJavadocJar()
+  withSourcesJar()
+}
+
+

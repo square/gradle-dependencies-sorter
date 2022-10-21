@@ -1,9 +1,6 @@
 plugins {
-  id 'com.squareup.convention'
+  id 'com.squareup.lib'
   id 'java-gradle-plugin'
-  id 'org.jetbrains.kotlin.jvm'
-  id 'maven-publish'
-  id 'groovy'
 }
 
 gradlePlugin {

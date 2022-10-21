@@ -1,12 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-  id 'com.squareup.convention'
-  id 'application'
-  id 'org.jetbrains.kotlin.jvm'
-  id 'groovy'
-  id 'com.github.johnrengelman.shadow'
-  id 'maven-publish'
+  id 'com.squareup.app'
 }
 
 application {

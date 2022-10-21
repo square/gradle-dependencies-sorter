@@ -2,8 +2,6 @@ pluginManagement {
   includeBuild 'build-logic'
 
   plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.7.20'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'com.gradle.enterprise' version '3.11.2'
   }
 }

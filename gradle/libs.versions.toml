@@ -1,16 +1,22 @@
 [versions]
 antlr = "4.10.1"
+java = "11"
 junit5 = "5.7.2"
 kotlin = "1.7.20"
+shadow = "7.1.2"
 
 [libraries]
 antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
 antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 picocli = "info.picocli:picocli:4.6.2"
+shadow-gradle-plugin = { module = "gradle.plugin.com.github.johnrengelman:shadow", version.ref = "shadow" }
 slf4j = "org.slf4j:slf4j-simple:2.0.0-alpha7"
 
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 spock = "org.spockframework:spock-core:2.1-groovy-3.0"
 truth = "com.google.truth:truth:1.1.3"
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
