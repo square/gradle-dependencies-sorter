@@ -1,6 +1,5 @@
 plugins {
-  id 'com.squareup.lib'
-  id 'java-gradle-plugin'
+  id 'com.squareup.plugin'
 }
 
 gradlePlugin {
