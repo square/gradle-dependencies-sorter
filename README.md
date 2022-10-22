@@ -25,6 +25,15 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 
 ### Gradle plugin
 
+#### Apply it
+
+```groovy
+// build.gradle[.kts]
+plugins {
+  id("com.squareup.sort-dependencies") version "<<version>>"
+}
+```
+
 #### Sort it
 
 ```shell
