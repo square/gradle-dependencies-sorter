@@ -47,6 +47,34 @@ final class FunctionalSpec extends Specification {
     """.stripIndent()
   }
 
+  def "can sort build.gradle.kts"() {
+    given: 'A build script with unsorted dependencies'
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript, BUILD_SCRIPT_KTS)
+
+    when: 'We sort dependencies'
+    build(dir, 'sortDependencies')
+
+    then: 'Dependencies are sorted'
+    buildScript.text == """\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url = uri("$REPO") }
+      }
+
+      dependencies {
+        implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+        implementation("com.squareup.okhttp3:okhttp:4.10.0")
+        implementation("com.squareup.okio:okio:3.2.0")
+      }
+    """.stripIndent()
+  }
+
   def "can check sort order"() {
     given: 'A build script with unsorted dependencies'
     def buildScript = dir.resolve('build.gradle')
@@ -74,6 +102,24 @@ final class FunctionalSpec extends Specification {
       implementation('com.squareup.okio:okio:3.2.0')
       implementation('com.squareup.okhttp3:okhttp:4.10.0')
       implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
+    }
+  """.stripIndent()
+
+  private static final BUILD_SCRIPT_KTS = """\
+    plugins {
+      `java-library`
+      id("com.squareup.sort-dependencies")
+    }
+    
+    repositories {
+      mavenCentral()
+      maven { url = uri("$REPO") }
+    }
+    
+    dependencies {
+      implementation("com.squareup.okio:okio:3.2.0")
+      implementation("com.squareup.okhttp3:okhttp:4.10.0")
+      implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     }
   """.stripIndent()
 }

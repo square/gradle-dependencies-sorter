@@ -1,13 +1,13 @@
 # gradle-dependencies-sorter
 
-This JVM CLI app and companion Gradle plugin can sort the dependencies of a `build.gradle` script.
+This JVM CLI app and companion Gradle plugin can sort the dependencies of a `build.gradle[.kts]` script.
 
 ## Usage
 
 ### CLI
 
 ```shell
-./path/to/sort <path(s) that contain build.gradle scripts>
+./path/to/sort <path(s) that contain build.gradle[.kts] scripts>
 
 # for example, use this to sort the full repo
 ./path/to/sort .
@@ -16,7 +16,7 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 ./path/to/sort features
 
 # for example, use this to sort a single file
-./path/to/sort my/app/build.gradle
+./path/to/sort my/app/build.gradle[.kts]
 
 # Check sort status
 ./path/to/sort -m check <paths as above>

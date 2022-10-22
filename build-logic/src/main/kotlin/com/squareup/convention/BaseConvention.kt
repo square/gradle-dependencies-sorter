@@ -5,6 +5,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.GroovyCompile
+import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 
 class BaseConvention : Plugin<Project> {
@@ -31,6 +32,10 @@ class BaseConvention : Plugin<Project> {
 
     tasks.withType(GroovyCompile::class.java).configureEach {
       it.options.isIncremental = true
+    }
+
+    tasks.withType(Test::class.java).configureEach {
+      it.useJUnitPlatform()
     }
 
     // Exclude Junit4. We really want to enforce Junit5 and unfortunately, Truth has a transitive dependency on 4.
