@@ -1,8 +1,8 @@
 package com.squareup.sort
 
 import com.squareup.grammar.GradleGroovyScript
+import com.squareup.grammar.GradleGroovyScript.ConfigurationContext
 import com.squareup.grammar.GradleGroovyScript.DependenciesContext
-import com.squareup.grammar.GradleGroovyScript.DependencyContext
 import com.squareup.grammar.GradleGroovyScript.NormalDeclarationContext
 import com.squareup.grammar.GradleGroovyScript.PlatformDeclarationContext
 import com.squareup.grammar.GradleGroovyScript.TestFixturesDeclarationContext
@@ -33,17 +33,17 @@ public class Sorter private constructor(
   private var indent = "  "
 
   private val dependencyComparator = DependencyComparator(tokens)
-  private val dependenciesByConfiguration = mutableMapOf<String, MutableList<CtxDependency>>()
-  private val dependenciesInOrder = mutableListOf<CtxDependency>()
+  private val dependenciesByConfiguration = mutableMapOf<String, MutableList<DependencyDeclaration>>()
+  private val dependenciesInOrder = mutableListOf<DependencyDeclaration>()
   private var alreadyOrdered = false
 
   private fun collectDependency(
     configuration: String,
-    ctxDependency: CtxDependency
+    dependencyDeclaration: DependencyDeclaration
   ) {
-    setIndent(ctxDependency.declaration)
-    dependenciesInOrder += ctxDependency
-    dependenciesByConfiguration.merge(configuration, mutableListOf(ctxDependency)) { acc, inc ->
+    setIndent(dependencyDeclaration.declaration)
+    dependenciesInOrder += dependencyDeclaration
+    dependenciesByConfiguration.merge(configuration, mutableListOf(dependencyDeclaration)) { acc, inc ->
       acc.apply { addAll(inc) }
     }
   }
@@ -96,18 +96,15 @@ public class Sorter private constructor(
   }
 
   override fun enterNormalDeclaration(ctx: NormalDeclarationContext) {
-    val c = ctx.configuration()
-    collectDependency(tokens.getText(c), CtxDependency.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
   }
 
   override fun enterPlatformDeclaration(ctx: PlatformDeclarationContext) {
-    val c = ctx.configuration()
-    collectDependency(tokens.getText(c), CtxDependency.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
   }
 
   override fun enterTestFixturesDeclaration(ctx: TestFixturesDeclarationContext) {
-    val c = ctx.configuration()
-    collectDependency(tokens.getText(c), CtxDependency.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
   }
 
   override fun exitDependencies(ctx: DependenciesContext) {
@@ -115,7 +112,7 @@ public class Sorter private constructor(
   }
 
   private fun dependenciesBlock() = buildString {
-    val newOrder = mutableListOf<CtxDependency>()
+    val newOrder = mutableListOf<DependencyDeclaration>()
 
     appendLine("dependencies {")
     dependenciesByConfiguration.entries.sortedWith(ConfigurationComparator)
@@ -143,8 +140,8 @@ public class Sorter private constructor(
   }
 
   private fun isSameOrder(
-    first: List<CtxDependency>,
-    second: List<CtxDependency>
+    first: List<DependencyDeclaration>,
+    second: List<DependencyDeclaration>
   ): Boolean {
     if (first.size != second.size) return false
     return first.zip(second).all { (l, r) ->
@@ -191,61 +188,6 @@ internal class RewriterErrorListener : AbstractErrorListener() {
     e: RecognitionException?
   ) {
     errorMessages.add(msg)
-  }
-}
-
-/**
- * To sort a dependency declaration, we care what kind of declaration it is ("normal", "platform", "test fixtures"), as
- * well as what kind of dependency it is (GAV, project, file/files, catalog-like).
- */
-internal class CtxDependency(
-  val declaration: ParserRuleContext,
-  val dependency: DependencyContext,
-  private val declarationKind: DeclarationKind,
-  private val dependencyKind: DependencyKind,
-) {
-
-  enum class DeclarationKind {
-    NORMAL, PLATFORM, TEST_FIXTURES
-  }
-
-  enum class DependencyKind {
-    NORMAL, PROJECT, FILE;
-
-    companion object {
-      fun of(dependency: DependencyContext): DependencyKind {
-        return if (dependency.externalDependency() != null) NORMAL
-        else if (dependency.projectDependency() != null) PROJECT
-        else if (dependency.fileDependency() != null) FILE
-        else error("Unknown dependency kind. Was ${dependency.text}.")
-      }
-    }
-  }
-
-  fun isPlatformDeclaration() = declarationKind == DeclarationKind.PLATFORM
-  fun isTestFixturesDeclaration() = declarationKind == DeclarationKind.TEST_FIXTURES
-
-  fun isProjectDependency() = dependencyKind == DependencyKind.PROJECT
-  fun isFileDependency() = dependencyKind == DependencyKind.FILE
-
-  companion object {
-    fun of(declaration: ParserRuleContext): CtxDependency {
-      val (dependency, declarationKind) = when (declaration) {
-        is NormalDeclarationContext -> declaration.dependency() to DeclarationKind.NORMAL
-        is PlatformDeclarationContext -> declaration.dependency() to DeclarationKind.PLATFORM
-        is TestFixturesDeclarationContext -> declaration.dependency() to DeclarationKind.TEST_FIXTURES
-        else -> error("Unknown declaration kind. Was ${declaration.text}.")
-      }
-
-      val dependencyKind = when (declaration) {
-        is NormalDeclarationContext -> DependencyKind.of(declaration.dependency())
-        is PlatformDeclarationContext -> DependencyKind.of(declaration.dependency())
-        is TestFixturesDeclarationContext -> DependencyKind.of(declaration.dependency())
-        else -> error("Unknown declaration kind. Was ${declaration.text}.")
-      }
-
-      return CtxDependency(declaration, dependency, declarationKind, dependencyKind)
-    }
   }
 }
 

@@ -5,11 +5,11 @@ import org.antlr.v4.runtime.CommonTokenStream
 
 internal class DependencyComparator(
   private val tokens: CommonTokenStream
-) : Comparator<CtxDependency> {
+) : Comparator<DependencyDeclaration> {
 
   override fun compare(
-    left: CtxDependency,
-    right: CtxDependency
+    left: DependencyDeclaration,
+    right: DependencyDeclaration
   ): Int {
     if (left.isPlatformDeclaration() && right.isPlatformDeclaration()) return compareDeclaration(left, right)
     if (left.isPlatformDeclaration()) return -1
@@ -23,8 +23,8 @@ internal class DependencyComparator(
   }
 
   private fun compareDeclaration(
-    left: CtxDependency,
-    right: CtxDependency
+    left: DependencyDeclaration,
+    right: DependencyDeclaration
   ): Int {
     if (left.isProjectDependency() && right.isProjectDependency()) return compareDependencies(left, right)
     if (left.isProjectDependency()) return -1
@@ -38,8 +38,8 @@ internal class DependencyComparator(
   }
 
   private fun compareDependencies(
-    left: CtxDependency,
-    right: CtxDependency
+    left: DependencyDeclaration,
+    right: DependencyDeclaration
   ): Int {
     // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45, and
     // the colon's is 58. We replace colons with commas and then rely on natural sort order from there.
@@ -67,7 +67,7 @@ internal class DependencyComparator(
    *
    * We want 2 to be sorted above 1. This is arbitrary.
    */
-  private fun CtxDependency.hasQuotes(): Boolean {
+  private fun DependencyDeclaration.hasQuotes(): Boolean {
     val i = declaration.children.indexOf(dependency)
     return declaration.getChild(i - 1) is QuoteContext && declaration.getChild(i + 1) is QuoteContext
   }
