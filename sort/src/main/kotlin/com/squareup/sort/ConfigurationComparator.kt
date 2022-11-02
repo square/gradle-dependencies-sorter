@@ -1,7 +1,7 @@
 package com.squareup.sort
 
 internal object ConfigurationComparator :
-  Comparator<MutableMap.MutableEntry<String, MutableList<CtxDependency>>> {
+  Comparator<MutableMap.MutableEntry<String, MutableList<DependencyDeclaration>>> {
 
   private class Configuration(
     private val configuration: String,
@@ -36,35 +36,38 @@ internal object ConfigurationComparator :
         }
 
         // Try to find an exact match
-        var c = findConfiguration { it.first == configuration }
+        var matchingConfiguration = findConfiguration { it.first == configuration }
 
         // If that failed, look for a variant
-        if (c == null) {
-          c = findConfiguration { configuration.endsWith(it.first, true) }
-          if (c != null) {
-            c.variant = configuration.substring(0, configuration.length - c.configuration.length)
+        if (matchingConfiguration == null) {
+          matchingConfiguration = findConfiguration { configuration.endsWith(it.first, true) }
+          if (matchingConfiguration != null) {
+            matchingConfiguration.variant = configuration.substring(
+              0,
+              configuration.length - matchingConfiguration.configuration.length
+            )
           }
         }
 
         // Look for a variant again
-        if (c == null) {
-          c = findConfiguration { configuration.startsWith(it.first, true) }
-          if (c != null) {
-            c.variant = configuration.substring(
-              configuration.length - c.configuration.length,
+        if (matchingConfiguration == null) {
+          matchingConfiguration = findConfiguration { configuration.startsWith(it.first, true) }
+          if (matchingConfiguration != null) {
+            matchingConfiguration.variant = configuration.substring(
+              configuration.length - matchingConfiguration.configuration.length,
               configuration.length
             )
           }
         }
 
-        return c
+        return matchingConfiguration
       }
     }
   }
 
   override fun compare(
-    left: MutableMap.MutableEntry<String, MutableList<CtxDependency>>,
-    right: MutableMap.MutableEntry<String, MutableList<CtxDependency>>
+    left: MutableMap.MutableEntry<String, MutableList<DependencyDeclaration>>,
+    right: MutableMap.MutableEntry<String, MutableList<DependencyDeclaration>>
   ): Int = stringCompare(left.key, right.key)
 
   /** Visible for testing. */
