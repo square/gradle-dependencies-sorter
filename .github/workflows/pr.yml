@@ -1,0 +1,37 @@
+name: Test
+
+on:
+  pull_request:
+    paths-ignore:
+      - '*.md'
+      - '*.asciidoc'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual run'
+        required: false
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gradle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 11
+
+      - name: Run tests
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check -s
