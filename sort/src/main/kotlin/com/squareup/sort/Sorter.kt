@@ -1,7 +1,6 @@
 package com.squareup.sort
 
 import com.squareup.grammar.GradleGroovyScript
-import com.squareup.grammar.GradleGroovyScript.ConfigurationContext
 import com.squareup.grammar.GradleGroovyScript.DependenciesContext
 import com.squareup.grammar.GradleGroovyScript.NormalDeclarationContext
 import com.squareup.grammar.GradleGroovyScript.PlatformDeclarationContext
@@ -21,11 +20,13 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import kotlin.io.path.absolutePathString
 
 public class Sorter private constructor(
   private val tokens: CommonTokenStream,
   private val rewriter: TokenStreamRewriter,
   private val errorListener: RewriterErrorListener,
+  private val filePath: String,
 ) : GradleGroovyScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
@@ -96,15 +97,15 @@ public class Sorter private constructor(
   }
 
   override fun enterNormalDeclaration(ctx: NormalDeclarationContext) {
-    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun enterPlatformDeclaration(ctx: PlatformDeclarationContext) {
-    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun enterTestFixturesDeclaration(ctx: TestFixturesDeclarationContext) {
-    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx))
+    collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun exitDependencies(ctx: DependenciesContext) {
@@ -166,7 +167,8 @@ public class Sorter private constructor(
       val listener = Sorter(
         tokens = tokens,
         rewriter = TokenStreamRewriter(tokens),
-        errorListener = errorListener
+        errorListener = errorListener,
+        filePath = file.absolutePathString()
       )
       val tree = parser.script()
       walker.walk(listener, tree)
