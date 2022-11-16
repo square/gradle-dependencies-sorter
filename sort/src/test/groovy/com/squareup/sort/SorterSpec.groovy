@@ -276,6 +276,24 @@ final class SorterSpec extends Specification {
     thrown(AlreadyOrderedException)
   }
 
+  // It's at the app/SortCommand level that this exception is caught and gracefully handled
+  def "throws IllegalStateException when someone uses 'path:' notation"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          api project(path: ":marvin")
+        }
+      '''.stripIndent())
+
+    when: 'We parse the build script'
+    Sorter.sorterFor(buildScript)
+
+    then: 'An illegal state exception is thrown'
+    thrown(IllegalStateException)
+  }
+
   def "a script without dependencies is already sorted"() {
     given:
     def buildScript = dir.resolve('build.gradle')

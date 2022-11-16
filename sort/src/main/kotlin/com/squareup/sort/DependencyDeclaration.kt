@@ -25,11 +25,11 @@ internal class DependencyDeclaration(
     NORMAL, PROJECT, FILE;
 
     companion object {
-      fun of(dependency: DependencyContext): DependencyKind {
+      fun of(dependency: DependencyContext, filePath: String): DependencyKind {
         return if (dependency.externalDependency() != null) NORMAL
         else if (dependency.projectDependency() != null) PROJECT
         else if (dependency.fileDependency() != null) FILE
-        else error("Unknown dependency kind. Was ${dependency.text}.")
+        else error("Unknown dependency kind. Was <${dependency.text}> for $filePath.")
       }
     }
   }
@@ -41,7 +41,7 @@ internal class DependencyDeclaration(
   fun isFileDependency() = dependencyKind == DependencyKind.FILE
 
   companion object {
-    fun of(declaration: ParserRuleContext): DependencyDeclaration {
+    fun of(declaration: ParserRuleContext, filePath: String): DependencyDeclaration {
       val (dependency, declarationKind) = when (declaration) {
         is NormalDeclarationContext -> declaration.dependency() to DeclarationKind.NORMAL
         is PlatformDeclarationContext -> declaration.dependency() to DeclarationKind.PLATFORM
@@ -50,9 +50,9 @@ internal class DependencyDeclaration(
       }
 
       val dependencyKind = when (declaration) {
-        is NormalDeclarationContext -> DependencyKind.of(declaration.dependency())
-        is PlatformDeclarationContext -> DependencyKind.of(declaration.dependency())
-        is TestFixturesDeclarationContext -> DependencyKind.of(declaration.dependency())
+        is NormalDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
+        is PlatformDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
+        is TestFixturesDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
         else -> error("Unknown declaration kind. Was ${declaration.text}.")
       }
 

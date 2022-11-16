@@ -16,6 +16,7 @@ import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.Callable
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -133,18 +134,23 @@ class SortCommand(
     var alreadySortedCount = 0
 
     filesToSort.parallelStream().forEach { file ->
-      val sorter = Sorter.sorterFor(file)
-      if (!sorter.isSorted() && !sorter.hasParseErrors()) {
-        logger.trace("Not ordered: ${file.pathString} ")
-        notSorted.add(file)
-      }
-      if (sorter.isSorted()) {
-        logger.trace("Already ordered: ${file.pathString} ")
-        alreadySortedCount++
-      }
-      if (sorter.hasParseErrors()) {
-        val error = checkNotNull(sorter.getParseError()) { "There must be a parse error." }
-        logger.trace("Parsing error: ${file.pathString} \n${error.localizedMessage}")
+      try {
+        val sorter = Sorter.sorterFor(file)
+        if (!sorter.isSorted() && !sorter.hasParseErrors()) {
+          logger.trace("Not ordered: ${file.pathString} ")
+          notSorted.add(file)
+        }
+        if (sorter.isSorted()) {
+          logger.trace("Already ordered: ${file.pathString} ")
+          alreadySortedCount++
+        }
+        if (sorter.hasParseErrors()) {
+          val error = checkNotNull(sorter.getParseError()) { "There must be a parse error." }
+          logger.trace("Parsing error: ${file.pathString} \n${error.localizedMessage}")
+          parseErrorCount++
+        }
+      } catch (t: Throwable) {
+        logger.trace("Parsing error: ${file.pathString}")
         parseErrorCount++
       }
     }
