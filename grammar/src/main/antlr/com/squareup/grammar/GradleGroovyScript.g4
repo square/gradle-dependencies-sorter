@@ -53,7 +53,7 @@ fileDependency
     ;
 
 closure
-    :   BRACE_OPEN .+? BRACE_CLOSE
+    :   BRACE_OPEN text+? BRACE_CLOSE
     ;
 
 quote
@@ -76,6 +76,7 @@ text
     | BRACE_CLOSE
     | PARENS_OPEN
     | PARENS_CLOSE
+    | BACKSLASH
     ;
 
 // Sea of crap I don't care about

@@ -12,6 +12,7 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import java.lang.IllegalStateException
 import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -102,6 +103,9 @@ class SortCommand(
         logger.trace("Successfully sorted: ${file.pathString} ")
         successCount++
       } catch (e: BuildScriptParseException) {
+        logger.warn("Parsing error: ${file.pathString} \n${e.localizedMessage}")
+        parseErrorCount++
+      } catch (e: IllegalStateException) {
         logger.warn("Parsing error: ${file.pathString} \n${e.localizedMessage}")
         parseErrorCount++
       } catch (_: AlreadyOrderedException) {

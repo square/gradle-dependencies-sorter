@@ -29,7 +29,7 @@ internal class DependencyDeclaration(
         return if (dependency.externalDependency() != null) NORMAL
         else if (dependency.projectDependency() != null) PROJECT
         else if (dependency.fileDependency() != null) FILE
-        else error("Unknown dependency kind. Was <${dependency.text}> for $filePath.")
+        else error("Unknown dependency kind. Was <${dependency.text}> for $filePath")
       }
     }
   }

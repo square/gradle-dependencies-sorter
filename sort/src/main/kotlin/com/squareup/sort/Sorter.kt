@@ -33,6 +33,8 @@ public class Sorter private constructor(
   private var smartIndentSet = false
   private var indent = "  "
 
+  private var isInBuildScriptBlock = false
+
   private val dependencyComparator = DependencyComparator(tokens)
   private val dependenciesByConfiguration = mutableMapOf<String, MutableList<DependencyDeclaration>>()
   private val dependenciesInOrder = mutableListOf<DependencyDeclaration>()
@@ -96,19 +98,31 @@ public class Sorter private constructor(
     }
   }
 
+  override fun enterBuildscript(ctx: GradleGroovyScript.BuildscriptContext?) {
+    isInBuildScriptBlock = true
+  }
+
+  override fun exitBuildscript(ctx: GradleGroovyScript.BuildscriptContext?) {
+    isInBuildScriptBlock = false
+  }
+
   override fun enterNormalDeclaration(ctx: NormalDeclarationContext) {
+    if (isInBuildScriptBlock) return
     collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun enterPlatformDeclaration(ctx: PlatformDeclarationContext) {
+    if (isInBuildScriptBlock) return
     collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun enterTestFixturesDeclaration(ctx: TestFixturesDeclarationContext) {
+    if (isInBuildScriptBlock) return
     collectDependency(tokens.getText(ctx.configuration()), DependencyDeclaration.of(ctx, filePath))
   }
 
   override fun exitDependencies(ctx: DependenciesContext) {
+    if (isInBuildScriptBlock) return
     rewriter.replace(ctx.start, ctx.stop, dependenciesBlock())
   }
 
@@ -160,8 +174,13 @@ public class Sorter private constructor(
       val tokens = CommonTokenStream(lexer)
       val parser = GradleGroovyScript(tokens)
 
+      // Remove default error listeners to prevent insane console output
+      lexer.removeErrorListeners()
+      parser.removeErrorListeners()
+
       val errorListener = RewriterErrorListener()
       parser.addErrorListener(errorListener)
+      lexer.addErrorListener(errorListener)
 
       val walker = ParseTreeWalker()
       val listener = Sorter(
