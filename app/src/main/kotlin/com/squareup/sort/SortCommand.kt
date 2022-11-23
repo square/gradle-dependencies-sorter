@@ -12,12 +12,10 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-import java.lang.IllegalStateException
 import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.Callable
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
