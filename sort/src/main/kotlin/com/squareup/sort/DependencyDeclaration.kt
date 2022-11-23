@@ -11,10 +11,10 @@ import org.antlr.v4.runtime.ParserRuleContext
  * well as what kind of dependency it is (GAV, project, file/files, catalog-like).
  */
 internal class DependencyDeclaration(
-    val declaration: ParserRuleContext,
-    val dependency: DependencyContext,
-    private val declarationKind: DeclarationKind,
-    private val dependencyKind: DependencyKind,
+  val declaration: ParserRuleContext,
+  val dependency: DependencyContext,
+  private val declarationKind: DeclarationKind,
+  private val dependencyKind: DependencyKind,
 ) {
 
   enum class DeclarationKind {

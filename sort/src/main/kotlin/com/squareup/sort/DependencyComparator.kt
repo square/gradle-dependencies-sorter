@@ -43,8 +43,9 @@ internal class DependencyComparator(
   ): Int {
     // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45, and
     // the colon's is 58. We replace colons with commas and then rely on natural sort order from there.
-    val leftText = tokens.getText(left.dependency).replace(':', ',')
-    val rightText = tokens.getText(right.dependency).replace(':', ',')
+    // Similarly, single and double quotes have different values, but we don't care about that for our purposes.
+    val leftText = tokens.getText(left.dependency).replace(':', ',').replace("'", "\"")
+    val rightText = tokens.getText(right.dependency).replace(':', ',').replace("'", "\"")
 
     // Get natural sort order
     val c = leftText.compareTo(rightText)

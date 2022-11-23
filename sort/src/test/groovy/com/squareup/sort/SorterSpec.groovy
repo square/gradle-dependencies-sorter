@@ -194,6 +194,25 @@ final class SorterSpec extends Specification {
     )).inOrder()
   }
 
+  def "single and double quotes are treated as equivalent"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+      '''\
+          dependencies {
+            api project(':a')
+            api project(":b")
+          }
+        '''.stripIndent())
+    def sorter = Sorter.sorterFor(buildScript)
+
+    when:
+    sorter.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+  }
+
   // We have observed that, given the start "dependencies{" (no space), and a project dependency, the
   // parser fails. For some reason this combination was confusing the lexer, which treated
   // "dependencies{" as if it matched the 'text' rule, rather than the 'dependencies' rule.
