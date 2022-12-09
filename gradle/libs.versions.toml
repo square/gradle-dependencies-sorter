@@ -19,7 +19,7 @@ picocli = "info.picocli:picocli:4.6.2"
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
 shadow-gradle-plugin = { module = "gradle.plugin.com.github.johnrengelman:shadow", version.ref = "shadow" }
-slf4j = "org.slf4j:slf4j-simple:2.0.0-alpha7"
+slf4j = "org.slf4j:slf4j-simple:2.0.5"
 
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
