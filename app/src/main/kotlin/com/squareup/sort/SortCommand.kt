@@ -225,7 +225,7 @@ private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
     System.getProperty("java.io.tmpdir"),
     "dependencies-sorter"
   ).createDirectories()
-  val logFile = Files.createFile(logDir.resolve("${Instant.now()}.log"))
+  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
 
   return DelegatingLogger(
     delegate = LoggerFactory.getLogger("Sorter"),
