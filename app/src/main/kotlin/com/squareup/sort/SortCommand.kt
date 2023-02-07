@@ -5,6 +5,7 @@ import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
 import com.squareup.sort.Status.NO_BUILD_SCRIPTS_FOUND
 import com.squareup.sort.Status.NO_PATH_PASSED
+import com.squareup.sort.Status.PARSE_ERROR
 import com.squareup.sort.Status.SUCCESS
 import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
@@ -123,7 +124,7 @@ class SortCommand(
       """.trimIndent()
     )
 
-    return SUCCESS
+    return if (parseErrorCount == 0) SUCCESS else PARSE_ERROR
   }
 
   private fun check(
@@ -189,7 +190,13 @@ class SortCommand(
 
     logger.info(log)
 
-    return if (success) SUCCESS else NOT_SORTED
+    return if (success) {
+      SUCCESS
+    } else if (parseErrorCount > 0) {
+      PARSE_ERROR
+    } else {
+      NOT_SORTED
+    }
   }
 }
 
@@ -199,5 +206,6 @@ enum class Status(val value: Int) {
   NO_BUILD_SCRIPTS_FOUND(2),
   NOT_SORTED(3),
   UNKNOWN_MODE(4),
+  PARSE_ERROR(5),
   ;
 }
