@@ -1,5 +1,6 @@
 package com.squareup.sort
 
+import com.squareup.log.DelegatingLogger
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
@@ -8,14 +9,20 @@ import com.squareup.sort.Status.NO_PATH_PASSED
 import com.squareup.sort.Status.SUCCESS
 import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
+import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.time.Instant
 import java.util.concurrent.Callable
+import kotlin.io.path.createDirectories
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -35,10 +42,20 @@ import kotlin.io.path.writeText
   ]
 )
 class SortCommand(
-  private val logger: Logger,
-  private val fileSystem: FileSystem,
+  private val fileSystem: FileSystem = FileSystems.getDefault(),
   private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
 ) : Callable<Int> {
+
+  private lateinit var logger: Logger
+
+  @Option(
+    names = ["-q", "--quiet"],
+    description = [
+      "Quiet mode. Only print errors. Logs are still written to a log file."
+    ],
+    defaultValue = "false"
+  )
+  var quiet: Boolean = false
 
   @Option(
     names = ["-m", "--mode"],
@@ -56,6 +73,7 @@ class SortCommand(
   lateinit var paths: List<String>
 
   override fun call(): Int {
+    logger = logger(fileSystem, quiet)
     if (!this::paths.isInitialized) {
       logger.error("No paths were passed. See 'help' for usage information.")
       return NO_PATH_PASSED.value
@@ -200,4 +218,18 @@ enum class Status(val value: Int) {
   NOT_SORTED(3),
   UNKNOWN_MODE(4),
   ;
+}
+
+private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
+  val logDir = fileSystem.getPath(
+    System.getProperty("java.io.tmpdir"),
+    "dependencies-sorter"
+  ).createDirectories()
+  val logFile = Files.createFile(logDir.resolve("${Instant.now()}.log"))
+
+  return DelegatingLogger(
+    delegate = LoggerFactory.getLogger("Sorter"),
+    file = logFile,
+    quiet = quiet,
+  )
 }
