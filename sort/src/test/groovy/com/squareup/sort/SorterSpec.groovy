@@ -342,6 +342,86 @@ final class SorterSpec extends Specification {
     sorter.isSorted()
   }
 
+  def "dedupe identical dependencies"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+            '''\
+          dependencies {
+            implementation(projects.foo)
+            implementation(projects.bar)
+            implementation(projects.foo)
+
+            api(projects.foo)
+            api(projects.bar)
+            api(projects.foo)
+          }
+        '''.stripIndent())
+
+    when:
+    def newScript = Sorter.sorterFor(buildScript).rewritten()
+
+    then:
+    notThrown(BuildScriptParseException)
+
+    and:
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+            '''\
+          dependencies {
+            api(projects.bar)
+            api(projects.foo)
+            
+            implementation(projects.bar)
+            implementation(projects.foo)
+          }
+        '''.stripIndent()
+    )).inOrder()
+  }
+
+  def "keep identical dependencies that have non-identical comments"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+            '''\
+          dependencies {
+            // Foo implementation
+            implementation(projects.foo)
+            implementation(projects.bar)
+            // Foo implementation
+            implementation(projects.foo)
+
+            // Foo api 1st
+            api(projects.foo)
+            api(projects.bar)
+            // Foo api 2nd
+            api(projects.foo)
+          }
+        '''.stripIndent())
+
+    when:
+    def newScript = Sorter.sorterFor(buildScript).rewritten()
+
+    then:
+    notThrown(BuildScriptParseException)
+
+    and:
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+            '''\
+          dependencies {
+            api(projects.bar)
+            // Foo api 1st
+            api(projects.foo)
+            // Foo api 2nd
+            api(projects.foo)
+
+            implementation(projects.bar)
+            // Foo implementation
+            implementation(projects.foo)
+          }
+        '''.stripIndent()
+    )).inOrder()
+  }
+
   private static List<String> trimmedLinesOf(CharSequence content) {
     // to lines and trim whitespace off end
     return content.readLines().collect { it.replaceFirst('\\s+\$', '') }
