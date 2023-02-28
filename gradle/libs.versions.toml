@@ -2,11 +2,10 @@
 antlr = "4.10.1"
 java = "11"
 junit5 = "5.7.2"
-kotlin = "1.7.20"
-moshi = "1.12.0"
-moshix = "0.14.1"
+kotlin = "1.8.10"
+moshi = "1.14.0"
 retrofit = "2.9.0"
-shadow = "7.1.2"
+shadow = "8.1.0"
 
 [libraries]
 antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
