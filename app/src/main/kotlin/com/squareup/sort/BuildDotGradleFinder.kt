@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.stream.Collectors
 import kotlin.io.path.pathString
+import kotlin.streams.asSequence
 
 class BuildDotGradleFinder(
   private val root: Path,
@@ -14,10 +15,14 @@ class BuildDotGradleFinder(
     // nb, if the path passed to the resolve method is already an absolute path, it returns that.
     .map { root.resolve(it) }
     .flatMap { searchPath ->
-      Files.walk(searchPath).use { paths ->
-        paths.parallel()
-          .filter(Path::isBuildDotGradle)
-          .collect(Collectors.toUnmodifiableList())
+      if (searchPath.isBuildDotGradle()) {
+        sequenceOf(searchPath)
+      } else {
+        Files.walk(searchPath).use { paths ->
+          paths.parallel()
+            .filter(Path::isBuildDotGradle)
+            .asSequence()
+        }
       }
     }
     .toSet()
