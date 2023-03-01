@@ -2,7 +2,6 @@ package com.squareup.sort
 
 import com.squareup.log.DelegatingLogger
 import org.slf4j.LoggerFactory
-import picocli.CommandLine
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -13,16 +12,12 @@ import kotlin.system.exitProcess
 fun main(vararg args: String) {
   val fileSystem = FileSystems.getDefault()
 
-  val exitCode = logger(fileSystem).use { logger ->
-    val cli = CommandLine(
-      SortCommand(
-        logger = logger,
-        fileSystem = fileSystem
-      )
-    )
-    cli.execute(*args)
+  logger(fileSystem).use { logger ->
+    SortCommand(
+      logger = logger,
+      fileSystem = fileSystem
+    ).main(args)
   }
-  exitProcess(exitCode)
 }
 
 private fun logger(fileSystem: FileSystem): DelegatingLogger {

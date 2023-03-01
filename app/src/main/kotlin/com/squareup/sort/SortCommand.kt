@@ -1,21 +1,23 @@
 package com.squareup.sort
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.ProgramResult
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.enum
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
 import com.squareup.sort.Status.NO_BUILD_SCRIPTS_FOUND
-import com.squareup.sort.Status.NO_PATH_PASSED
 import com.squareup.sort.Status.SUCCESS
-import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
-import picocli.CommandLine.Command
-import picocli.CommandLine.HelpCommand
-import picocli.CommandLine.Option
-import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.Callable
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -25,42 +27,28 @@ import kotlin.io.path.writeText
  *
  * @see <a href="https://picocli.info/#_required_subcommands">Picocli: Required subcommands</a>
  */
-@Command(
-  name = "sort",
-  mixinStandardHelpOptions = true,
-  version = ["0.1"],
-  description = ["Sorts dependencies"],
-  subcommands = [
-    HelpCommand::class
-  ]
-)
 class SortCommand(
   private val logger: Logger,
   private val fileSystem: FileSystem,
-  private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
-) : Callable<Int> {
+  private val buildFileFinder: BuildDotGradleFinder.Factory = BuildDotGradleFinder.Factory.Default
+) : CliktCommand(
+  name = "sort",
+  help = "Sorts dependencies",
+) {
 
-  @Option(
-    names = ["-m", "--mode"],
-    description = [
-      "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
-    ],
-    defaultValue = "sort"
-  )
-  lateinit var mode: String
+  init {
+    context { helpFormatter = CliktHelpFormatter(showDefaultValues = true, showRequiredTag = true) }
+  }
 
-  @Parameters(
-    index = "0..*",
-    description = ["Path(s) to sort. Required."],
-  )
-  lateinit var paths: List<String>
+  val mode: Mode by option(
+    "-m", "--mode",
+    help = "Mode: [sort, check]. Check will report if a file is already sorted",
+  ).enum<Mode>().default(Mode.SORT)
 
-  override fun call(): Int {
-    if (!this::paths.isInitialized) {
-      logger.error("No paths were passed. See 'help' for usage information.")
-      return NO_PATH_PASSED.value
-    }
+  val paths: List<String> by argument(help = "Path(s) to sort.")
+    .multiple(required = true)
 
+  override fun run() {
     val pwd = fileSystem.getPath(".").toAbsolutePath().normalize()
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
@@ -70,7 +58,7 @@ class SortCommand(
 
     if (filesToSort.isEmpty()) {
       logger.error("No build.gradle(.kts) scripts found.")
-      return NO_BUILD_SCRIPTS_FOUND.value
+      throw ProgramResult(NO_BUILD_SCRIPTS_FOUND.value)
     } else {
       logger.info(
         "It took ${findFileTime - start} ms to find ${filesToSort.size} build scripts."
@@ -78,12 +66,13 @@ class SortCommand(
     }
 
     val status = when (mode) {
-      "sort" -> sort(filesToSort, findFileTime)
-      "check" -> check(filesToSort, findFileTime, pwd)
-      else -> UNKNOWN_MODE
+      Mode.SORT -> sort(filesToSort, findFileTime)
+      Mode.CHECK -> check(filesToSort, findFileTime, pwd)
     }
 
-    return status.value
+    if (status != SUCCESS) {
+      throw ProgramResult(status.value)
+    }
   }
 
   private fun sort(
@@ -193,11 +182,14 @@ class SortCommand(
   }
 }
 
+enum class Mode {
+  SORT,
+  CHECK,
+}
+
 enum class Status(val value: Int) {
   SUCCESS(0),
-  NO_PATH_PASSED(1),
-  NO_BUILD_SCRIPTS_FOUND(2),
-  NOT_SORTED(3),
-  UNKNOWN_MODE(4),
+  NO_BUILD_SCRIPTS_FOUND(1),
+  NOT_SORTED(2),
   ;
 }
