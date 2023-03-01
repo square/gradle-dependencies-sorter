@@ -7,3 +7,6 @@ build
 # Ignore generated antlr files
 */src/main/gen
 *.tokens
+
+# Ignore IntelliJ project files
+.idea
