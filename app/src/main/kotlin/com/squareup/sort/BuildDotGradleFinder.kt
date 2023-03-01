@@ -6,13 +6,10 @@ import java.util.stream.Collectors
 import kotlin.io.path.pathString
 
 class BuildDotGradleFinder(
-  private val root: Path,
-  searchPaths: List<String>
+  searchPaths: List<Path>
 ) {
 
   val buildDotGradles: Set<Path> = searchPaths.asSequence()
-    // nb, if the path passed to the resolve method is already an absolute path, it returns that.
-    .map { root.resolve(it) }
     .flatMap { searchPath ->
       Files.walk(searchPath).use { paths ->
         paths.parallel()
@@ -23,14 +20,11 @@ class BuildDotGradleFinder(
     .toSet()
 
   interface Factory {
-    fun of(
-      root: Path,
-      searchPaths: List<String>
-    ): BuildDotGradleFinder = BuildDotGradleFinder(root, searchPaths)
+    fun of(searchPaths: List<Path>): BuildDotGradleFinder = BuildDotGradleFinder(searchPaths)
 
     object Default : Factory {
-      override fun of(root: Path, searchPaths: List<String>): BuildDotGradleFinder {
-        return BuildDotGradleFinder(root, searchPaths)
+      override fun of(searchPaths: List<Path>): BuildDotGradleFinder {
+        return BuildDotGradleFinder(searchPaths)
       }
     }
   }

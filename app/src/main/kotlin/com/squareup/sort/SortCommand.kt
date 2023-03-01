@@ -9,6 +9,8 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.enum
+import com.github.ajalt.clikt.parameters.types.file
+import com.github.ajalt.clikt.parameters.types.path
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
@@ -45,7 +47,8 @@ class SortCommand(
     help = "Mode: [sort, check]. Check will report if a file is already sorted",
   ).enum<Mode>().default(Mode.SORT)
 
-  val paths: List<String> by argument(help = "Path(s) to sort.")
+  val paths: List<Path> by argument(help = "Path(s) to sort.")
+    .path(mustExist = true, canBeDir = true, canBeFile = true)
     .multiple(required = true)
 
   override fun run() {
@@ -53,7 +56,7 @@ class SortCommand(
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
     val start = System.currentTimeMillis()
-    val filesToSort = buildFileFinder.of(pwd, paths).buildDotGradles
+    val filesToSort = buildFileFinder.of(paths).buildDotGradles
     val findFileTime = System.currentTimeMillis()
 
     if (filesToSort.isEmpty()) {

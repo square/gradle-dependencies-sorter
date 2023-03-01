@@ -43,7 +43,7 @@ final class SortCommandSpec extends Specification {
 
     then:
     sortCommand.mode == Mode.CHECK
-    sortCommand.paths == [dir.toString()]
+    sortCommand.paths == [dir]
     statusCode == 0
   }
 
@@ -56,7 +56,7 @@ final class SortCommandSpec extends Specification {
 
     then:
     sortCommand.mode == Mode.CHECK
-    sortCommand.paths == [dir.toString()]
+    sortCommand.paths == [dir]
     statusCode == 1
   }
 
