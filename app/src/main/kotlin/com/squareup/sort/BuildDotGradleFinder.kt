@@ -27,6 +27,12 @@ class BuildDotGradleFinder(
       root: Path,
       searchPaths: List<String>
     ): BuildDotGradleFinder = BuildDotGradleFinder(root, searchPaths)
+
+    object Default : Factory {
+      override fun of(root: Path, searchPaths: List<String>): BuildDotGradleFinder {
+        return BuildDotGradleFinder(root, searchPaths)
+      }
+    }
   }
 }
 
