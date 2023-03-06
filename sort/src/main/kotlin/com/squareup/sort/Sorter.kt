@@ -134,23 +134,24 @@ public class Sorter private constructor(
       .forEachIndexed { i, entry ->
         if (i != 0) appendLine()
         data class Texts(val comment: String?, val declarationText: String)
-        entry.value.sortedWith(dependencyComparator).map { dependency ->
-          dependency to Texts(
-            comment = tokens.getHiddenTokensToLeft(dependency.declaration.start.tokenIndex, GradleGroovyScriptLexer.COMMENTS)
-              ?.joinToString(separator = "") { "$indent${it.text}" }?.trimEnd(),
-            declarationText = tokens.getText(dependency.declaration),
-          )
-        }.distinctBy { (_, texts) ->
-          texts
-        }.forEach { (declaration, texts) ->
-          newOrder += declaration
+        entry.value.sortedWith(dependencyComparator)
+          .map { dependency ->
+            dependency to Texts(
+              comment = tokens.getHiddenTokensToLeft(dependency.declaration.start.tokenIndex, GradleGroovyScriptLexer.COMMENTS)
+                ?.joinToString(separator = "") { "$indent${it.text}" }?.trimEnd(),
+              declarationText = tokens.getText(dependency.declaration),
+            )
+          }
+          .distinctBy { (_, texts) -> texts }
+          .forEach { (declaration, texts) ->
+            newOrder += declaration
 
-          // Get preceding comments
-          if (texts.comment != null) appendLine(texts.comment)
+            // Get preceding comments
+            if (texts.comment != null) appendLine(texts.comment)
 
-          append(indent)
-          appendLine(texts.declarationText)
-        }
+            append(indent)
+            appendLine(texts.declarationText)
+          }
       }
     append("}")
 
