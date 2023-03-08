@@ -45,7 +45,7 @@ externalDependency
     ;
 
 projectDependency
-    :   PROJECT PARENS_OPEN quote? ID quote? PARENS_CLOSE
+    :   PROJECT PARENS_OPEN PATH? quote? ID quote? PARENS_CLOSE
     ;
 
 fileDependency

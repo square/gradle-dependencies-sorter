@@ -9,6 +9,7 @@ TEST_FIXTURES: 'testFixtures(';
 PLATFORM: 'platform(';
 PROJECT: 'project';
 BUILDSCRIPT: 'buildscript';
+PATH: 'path' COLON WS*;
 
 BRACE_OPEN: '{';
 BRACE_CLOSE: '}';
@@ -18,6 +19,7 @@ QUOTE_SINGLE: '\'';
 QUOTE_DOUBLE: '"';
 EQUALS: '=';
 SEMI: ';';
+COLON: ':';
 BACKSLASH: '\\';
 
 UNICODE_LATIN: '\u0021'..'\u007E';

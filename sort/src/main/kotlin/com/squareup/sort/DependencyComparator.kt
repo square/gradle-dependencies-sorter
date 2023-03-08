@@ -41,11 +41,8 @@ internal class DependencyComparator(
     left: DependencyDeclaration,
     right: DependencyDeclaration
   ): Int {
-    // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45, and
-    // the colon's is 58. We replace colons with commas and then rely on natural sort order from there.
-    // Similarly, single and double quotes have different values, but we don't care about that for our purposes.
-    val leftText = tokens.getText(left.dependency).replace(':', ',').replace("'", "\"")
-    val rightText = tokens.getText(right.dependency).replace(':', ',').replace("'", "\"")
+    val leftText = tokens.getText(left.dependency).simplifiedForComparison()
+    val rightText = tokens.getText(right.dependency).simplifiedForComparison()
 
     // Get natural sort order
     val c = leftText.compareTo(rightText)
@@ -71,5 +68,16 @@ internal class DependencyComparator(
   private fun DependencyDeclaration.hasQuotes(): Boolean {
     val i = declaration.children.indexOf(dependency)
     return declaration.getChild(i - 1) is QuoteContext && declaration.getChild(i + 1) is QuoteContext
+  }
+
+  // There are a number of things we want to ignore when comparing dependencies.
+  // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45,
+  // and the colon's is 58. We replace colons with commas and then rely on natural sort order from
+  // there.  Similarly, single and double quotes have different values, but we don't care about
+  // that for our purposes. Lastly, ignore leading blankspace and path: label.
+  private fun String.simplifiedForComparison(): String {
+    return replace(Regex("\\( *(path:)? *"), "(")
+      .replace(':', ',')
+      .replace("'", "\"")
   }
 }
