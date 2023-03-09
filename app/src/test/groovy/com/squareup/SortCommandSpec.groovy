@@ -20,15 +20,14 @@ final class SortCommandSpec extends Specification {
     def commandLine = new CommandLine(newSortCommand())
 
     when:
-    def parseResult = commandLine.parseArgs('-m', 'check')
+    def parseResult = commandLine.parseArgs('-m', 'check', '-q')
 
     then:
-    parseResult.expandedArgs() == ['-m', 'check']
+    parseResult.expandedArgs() == ['-m', 'check', '-q']
   }
 
   private SortCommand newSortCommand() {
     return new SortCommand(
-      LoggerFactory.getLogger("Sorter"),
       FileSystems.getDefault(),
       Stub(BuildDotGradleFinder.Factory)
     )
