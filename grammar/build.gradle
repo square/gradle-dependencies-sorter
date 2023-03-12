@@ -19,8 +19,8 @@ tasks.named('generateGrammarSource', AntlrTask) {
       // Specify the location of "libs"; i.e., for grammars composed of multiple files
       '-lib', antlrSrc
   ]
-  tasks.findByPath(":grammar:sourcesJar").dependsOn(it)
 }
+tasks.findByPath(":grammar:sourcesJar").dependsOn("generateGrammarSource")
 
 dependencies {
   antlr libs.antlr.core
