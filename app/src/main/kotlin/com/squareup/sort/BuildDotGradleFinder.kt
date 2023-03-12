@@ -1,16 +1,16 @@
 package com.squareup.sort
 
-import java.nio.file.Files
 import java.nio.file.Path
-import java.util.stream.Collectors
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.pathString
-import kotlin.streams.asSequence
+import kotlin.io.path.walk
 
 class BuildDotGradleFinder(
   private val root: Path,
   searchPaths: List<String>
 ) {
 
+  @OptIn(ExperimentalPathApi::class)
   val buildDotGradles: Set<Path> = searchPaths.asSequence()
     // nb, if the path passed to the resolve method is already an absolute path, it returns that.
     .map { root.resolve(it) }
@@ -18,11 +18,7 @@ class BuildDotGradleFinder(
       if (searchPath.isBuildDotGradle()) {
         sequenceOf(searchPath)
       } else {
-        Files.walk(searchPath).use { paths ->
-          paths.parallel()
-            .filter(Path::isBuildDotGradle)
-            .asSequence()
-        }
+        searchPath.walk().filter(Path::isBuildDotGradle)
       }
     }
     .toSet()
