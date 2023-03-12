@@ -35,7 +35,7 @@ public class Sorter private constructor(
 
   private var isInBuildScriptBlock = false
 
-  private val dependencyComparator = DependencyComparator(tokens)
+  private val dependencyComparator = DependencyComparator()
   private val dependenciesByConfiguration = mutableMapOf<String, MutableList<DependencyDeclaration>>()
   private val dependenciesInOrder = mutableListOf<DependencyDeclaration>()
   private var alreadyOrdered = false

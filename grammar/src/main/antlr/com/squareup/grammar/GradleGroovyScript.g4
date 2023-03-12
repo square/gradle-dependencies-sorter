@@ -45,7 +45,12 @@ externalDependency
     ;
 
 projectDependency
-    :   PROJECT PARENS_OPEN PATH? quote? ID quote? PARENS_CLOSE
+    :   PROJECT PARENS_OPEN quote? ID quote? PARENS_CLOSE
+    |   PROJECT PARENS_OPEN projectMapEntry+ PARENS_CLOSE
+    ;
+
+projectMapEntry
+    :   WS? key=(CONFIGURATION|PATH) WS? quote? value=ID quote? WS? COMMA? WS?
     ;
 
 fileDependency
@@ -77,6 +82,7 @@ text
     | PARENS_OPEN
     | PARENS_CLOSE
     | BACKSLASH
+    | COMMA
     ;
 
 // Sea of crap I don't care about

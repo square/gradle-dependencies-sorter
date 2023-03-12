@@ -303,7 +303,7 @@ final class SorterSpec extends Specification {
         dependencies {
           api project(":path:path")
           api project(":zaphod")
-          api project(path: ":beeblebrox")
+          api project(path: ":beeblebrox", configuration: 'solipsism')
           api project(   path: ':path')
 
           api project( ":eddie" )
@@ -317,7 +317,7 @@ final class SorterSpec extends Specification {
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
-          api project(path: ":beeblebrox")
+          api project(path: ":beeblebrox", configuration: 'solipsism')
           api project( ":eddie" )
           api project(":eddie:eddie")
           api project(   path: ':path')

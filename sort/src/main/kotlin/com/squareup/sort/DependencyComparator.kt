@@ -1,11 +1,8 @@
 package com.squareup.sort
 
 import com.squareup.grammar.GradleGroovyScript.QuoteContext
-import org.antlr.v4.runtime.CommonTokenStream
 
-internal class DependencyComparator(
-  private val tokens: CommonTokenStream
-) : Comparator<DependencyDeclaration> {
+internal class DependencyComparator : Comparator<DependencyDeclaration> {
 
   override fun compare(
     left: DependencyDeclaration,
@@ -41,8 +38,8 @@ internal class DependencyComparator(
     left: DependencyDeclaration,
     right: DependencyDeclaration
   ): Int {
-    val leftText = tokens.getText(left.dependency).simplifiedForComparison()
-    val rightText = tokens.getText(right.dependency).simplifiedForComparison()
+    val leftText = left.comparisonText()
+    val rightText = right.comparisonText()
 
     // Get natural sort order
     val c = leftText.compareTo(rightText)
@@ -70,14 +67,21 @@ internal class DependencyComparator(
     return declaration.getChild(i - 1) is QuoteContext && declaration.getChild(i + 1) is QuoteContext
   }
 
-  // There are a number of things we want to ignore when comparing dependencies.
-  // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45,
-  // and the colon's is 58. We replace colons with commas and then rely on natural sort order from
-  // there.  Similarly, single and double quotes have different values, but we don't care about
-  // that for our purposes. Lastly, ignore leading blankspace and path: label.
-  private fun String.simplifiedForComparison(): String {
-    return replace(Regex("\\( *(path:)? *"), "(")
-      .replace(':', ',')
-      .replace("'", "\"")
+  private fun DependencyDeclaration.comparisonText(): String {
+    val text = when {
+      isProjectDependency() -> with (dependency.projectDependency()) {
+        // If project(path: 'foo') syntax is used, take the path value.
+        // Else, if project('foo') syntax is used, take the ID.
+        projectMapEntry().firstOrNull { it.key.text == "path:" }?.value?.text
+          ?: ID().text
+      }
+      isFileDependency() -> dependency.fileDependency().ID().text
+      else -> dependency.externalDependency().ID().text
+    }
+    // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is
+    // 45, and the colon's is 58. We replace colons with commas and then rely on natural sort order
+    // from there. Similarly, single and double quotes have different values, but we don't care
+    // about that for our purposes.
+    return text.replace(':', ',').replace("'", "\"")
   }
 }
