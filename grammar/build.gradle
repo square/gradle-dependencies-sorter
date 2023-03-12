@@ -20,6 +20,7 @@ tasks.named('generateGrammarSource', AntlrTask) {
       '-lib', antlrSrc
   ]
 }
+// Workaround for https://github.com/gradle/gradle/issues/19555
 tasks.named("sourcesJar") {
   dependsOn("generateGrammarSource")
 }
