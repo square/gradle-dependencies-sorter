@@ -20,7 +20,9 @@ tasks.named('generateGrammarSource', AntlrTask) {
       '-lib', antlrSrc
   ]
 }
-tasks.findByPath(":grammar:sourcesJar").dependsOn("generateGrammarSource")
+tasks.named("sourcesJar") {
+  dependsOn("generateGrammarSource")
+}
 
 dependencies {
   antlr libs.antlr.core
