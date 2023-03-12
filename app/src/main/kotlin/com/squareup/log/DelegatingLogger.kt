@@ -7,33 +7,46 @@ import kotlin.io.path.pathString
 
 class DelegatingLogger(
   private val delegate: Logger,
-  private val file: Path
+  private val file: Path,
+  private val quiet: Boolean
 ) : AutoCloseable, Logger by delegate {
 
   private val start = System.currentTimeMillis()
+  private var hasErrors = false
 
   override fun close() {
     val duration = System.currentTimeMillis() - start
-    delegate.info("Operation took $duration ms")
-    delegate.info("See log file at ${file.pathString} ")
+    if (!quiet) {
+      delegate.info("Operation took $duration ms")
+    }
+    if (hasErrors || !quiet) {
+      delegate.info("See log file at ${file.pathString} ")
+    }
   }
 
   override fun info(msg: String) {
     file.appendLine("INFO: $msg")
-    delegate.info(msg)
+    if (!quiet) {
+      delegate.info(msg)
+    }
   }
 
   override fun trace(msg: String) {
     file.appendLine("TRACE: $msg")
-    delegate.trace(msg)
+    if (!quiet) {
+      delegate.trace(msg)
+    }
   }
 
   override fun warn(msg: String) {
     file.appendLine("WARN: $msg")
-    delegate.trace(msg)
+    if (!quiet) {
+      delegate.trace(msg)
+    }
   }
 
   override fun error(msg: String) {
+    hasErrors = true
     file.appendLine("ERROR: $msg")
     delegate.error(msg)
   }
@@ -42,6 +55,7 @@ class DelegatingLogger(
     msg: String,
     t: Throwable
   ) {
+    hasErrors = true
     file.appendLine("ERROR: $msg, ${t.localizedMessage}")
     delegate.error(msg, t)
   }
