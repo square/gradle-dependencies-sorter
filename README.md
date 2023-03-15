@@ -30,6 +30,8 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 
 #### Apply it
 
+![Maven Central](https://img.shields.io/maven-central/v/com.squareup.sort-dependencies/com.squareup.sort-dependencies.gradle.plugin)
+
 ```groovy
 // build.gradle[.kts]
 plugins {
