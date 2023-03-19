@@ -15,7 +15,8 @@ class BuildDotGradleFinder(
       it.walk()
         .filter(File::isBuildDotGradle)
         .map(File::toPath)
-    }.toSet()
+    }
+    .toSet()
 
   interface Factory {
     fun of(
