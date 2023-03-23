@@ -78,10 +78,21 @@ internal class DependencyComparator : Comparator<DependencyDeclaration> {
       isFileDependency() -> dependency.fileDependency().ID().text
       else -> dependency.externalDependency().ID().text
     }
-    // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is
-    // 45, and the colon's is 58. We replace colons with commas and then rely on natural sort order
-    // from there. Similarly, single and double quotes have different values, but we don't care
-    // about that for our purposes.
+
+    /*
+     * Colons should sort "higher" than hyphens. The comma's ASCII value
+     * is 44, the hyphen's is 45, and the colon's is 58. We replace
+     * colons with commas and then rely on natural sort order from
+     * there.
+     *
+     * For example, consider ':foo-bar' vs. ':foo:bar'. Before this
+     * transformation, ':foo-bar' will appear before ':foo:bar'. But
+     * after it, we compare ',foo,bar' to ',foo-bar', which gives the
+     * desired sort ordering.
+     *
+     * Similarly, single and double quotes have different ASCII values,
+     * but we don't care about that for our purposes.
+     */
     return text.replace(':', ',').replace("'", "\"")
   }
 }
