@@ -67,6 +67,39 @@ final class GradleGroovyScriptSpec extends Specification {
     )
   }
 
+  def "ignores vendor extension block"() {
+    given:
+    def sourceFile = dir.resolve('build.gradle')
+    Files.writeString(
+      sourceFile,
+      '''\
+        plugins {
+            id "com.memefactory.conventions.android-library"
+        }
+
+        memeFactory {
+            dagger {
+                anvil {
+                    anvilGeneratorProjects = [project(':di:feature:compiler')]
+                    generateDaggerFactories()
+                }
+            }
+        }
+
+        dependencies {
+            api project(':not')
+            api project(':alpha:betical')
+        }
+        '''.stripIndent()
+    )
+
+    when:
+    def list = parseGroovyGradleScript(sourceFile)
+
+    then:
+    assertThat(list).containsExactly("project(':alpha:betical')", "project(':not')")
+  }
+
   def "can parse complex script"() {
     given:
     def sourceFile = dir.resolve('build.gradle')
@@ -416,6 +449,7 @@ final class GradleGroovyScriptSpec extends Specification {
     def lexer = new GradleGroovyScriptLexer(input)
     def tokens = new CommonTokenStream(lexer)
     def parser = new GradleGroovyScript(tokens)
+    parser.addErrorListener(new SimpleANTLRErrorListener({ throw it }))
 
     def tree = parser.script()
     def walker = new ParseTreeWalker()

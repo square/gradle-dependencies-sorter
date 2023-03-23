@@ -77,6 +77,7 @@ text
     | PARENS_OPEN
     | PARENS_CLOSE
     | BACKSLASH
+    | PROJECT
     ;
 
 // Sea of crap I don't care about
