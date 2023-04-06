@@ -233,7 +233,13 @@ private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
     System.getProperty("java.io.tmpdir"),
     "dependencies-sorter"
   ).createDirectories()
-  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
+
+  var logFile: Path? = null
+  while (logFile == null) {
+    try {
+      logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
+    } catch (_: FileAlreadyExistsException) { }
+  }
 
   return DelegatingLogger(
     delegate = LoggerFactory.getLogger("Sorter"),
