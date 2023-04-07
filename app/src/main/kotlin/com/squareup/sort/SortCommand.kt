@@ -11,7 +11,6 @@ import com.squareup.sort.Status.SUCCESS
 import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
@@ -59,6 +58,15 @@ class SortCommand(
   var quiet: Boolean = false
 
   @Option(
+    names = ["--skip-hidden-and-build-dirs"],
+    description = [
+      "Flag to control whether file tree walking looks in build and hidden directories. True by default."
+    ],
+    defaultValue = "true"
+  )
+  var skipHiddenAndBuildDirs: Boolean = true
+
+  @Option(
     names = ["-m", "--mode"],
     description = [
       "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
@@ -84,7 +92,11 @@ class SortCommand(
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
     val start = System.currentTimeMillis()
-    val filesToSort = buildFileFinder.of(pwd, paths).buildDotGradles
+    val filesToSort = buildFileFinder.of(
+      root = pwd,
+      searchPaths = paths,
+      skipHiddenAndBuildDirs = skipHiddenAndBuildDirs
+    ).buildDotGradles
     val findFileTime = System.currentTimeMillis()
 
     if (filesToSort.isEmpty()) {
