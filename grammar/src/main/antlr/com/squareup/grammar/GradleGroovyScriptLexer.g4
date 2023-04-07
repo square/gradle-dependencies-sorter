@@ -9,6 +9,8 @@ TEST_FIXTURES: 'testFixtures(';
 PLATFORM: 'platform(';
 PROJECT: 'project';
 BUILDSCRIPT: 'buildscript';
+PATH: 'path:';
+CONFIGURATION: 'configuration:';
 
 BRACE_OPEN: '{';
 BRACE_CLOSE: '}';
@@ -18,6 +20,7 @@ QUOTE_SINGLE: '\'';
 QUOTE_DOUBLE: '"';
 EQUALS: '=';
 SEMI: ';';
+COMMA: ',';
 BACKSLASH: '\\';
 
 UNICODE_LATIN: '\u0021'..'\u007E';
