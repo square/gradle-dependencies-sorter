@@ -4,6 +4,13 @@
 # Ignore Gradle build output directory
 build
 
+# Ignore local Gradle properties file
+local.properties
+
 # Ignore generated antlr files
-*/src/main/gen
+*/src/main/**/gen
 *.tokens
+
+# Ignore IntelliJ project files
+.idea
+

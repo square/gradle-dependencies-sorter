@@ -1,21 +1,28 @@
 package com.squareup.sort
 
+import com.squareup.log.DelegatingLogger
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
 import com.squareup.sort.Status.NO_BUILD_SCRIPTS_FOUND
 import com.squareup.sort.Status.NO_PATH_PASSED
+import com.squareup.sort.Status.PARSE_ERROR
 import com.squareup.sort.Status.SUCCESS
 import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
+import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.time.Instant
 import java.util.concurrent.Callable
+import kotlin.io.path.createDirectories
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -35,10 +42,29 @@ import kotlin.io.path.writeText
   ]
 )
 class SortCommand(
-  private val logger: Logger,
-  private val fileSystem: FileSystem,
+  private val fileSystem: FileSystem = FileSystems.getDefault(),
   private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
 ) : Callable<Int> {
+
+  private lateinit var logger: Logger
+
+  @Option(
+    names = ["-q", "--quiet"],
+    description = [
+      "Quiet mode. Only print errors. Logs are still written to a log file."
+    ],
+    defaultValue = "false"
+  )
+  var quiet: Boolean = false
+
+  @Option(
+    names = ["--skip-hidden-and-build-dirs"],
+    description = [
+      "Flag to control whether file tree walking looks in build and hidden directories. True by default."
+    ],
+    defaultValue = "true"
+  )
+  var skipHiddenAndBuildDirs: Boolean = true
 
   @Option(
     names = ["-m", "--mode"],
@@ -56,6 +82,7 @@ class SortCommand(
   lateinit var paths: List<String>
 
   override fun call(): Int {
+    logger = logger(fileSystem, quiet)
     if (!this::paths.isInitialized) {
       logger.error("No paths were passed. See 'help' for usage information.")
       return NO_PATH_PASSED.value
@@ -65,7 +92,11 @@ class SortCommand(
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
     val start = System.currentTimeMillis()
-    val filesToSort = buildFileFinder.of(pwd, paths).buildDotGradles
+    val filesToSort = buildFileFinder.of(
+      root = pwd,
+      searchPaths = paths,
+      skipHiddenAndBuildDirs = skipHiddenAndBuildDirs
+    ).buildDotGradles
     val findFileTime = System.currentTimeMillis()
 
     if (filesToSort.isEmpty()) {
@@ -123,7 +154,7 @@ class SortCommand(
       """.trimIndent()
     )
 
-    return SUCCESS
+    return if (parseErrorCount == 0) SUCCESS else PARSE_ERROR
   }
 
   private fun check(
@@ -189,7 +220,13 @@ class SortCommand(
 
     logger.info(log)
 
-    return if (success) SUCCESS else NOT_SORTED
+    return if (success) {
+      SUCCESS
+    } else if (parseErrorCount > 0) {
+      PARSE_ERROR
+    } else {
+      NOT_SORTED
+    }
   }
 }
 
@@ -199,5 +236,20 @@ enum class Status(val value: Int) {
   NO_BUILD_SCRIPTS_FOUND(2),
   NOT_SORTED(3),
   UNKNOWN_MODE(4),
+  PARSE_ERROR(5),
   ;
+}
+
+private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
+  val logDir = fileSystem.getPath(
+    System.getProperty("java.io.tmpdir"),
+    "dependencies-sorter"
+  ).createDirectories()
+  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
+
+  return DelegatingLogger(
+    delegate = LoggerFactory.getLogger("Sorter"),
+    file = logFile,
+    quiet = quiet,
+  )
 }

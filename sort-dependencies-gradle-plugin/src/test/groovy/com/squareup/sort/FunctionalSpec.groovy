@@ -12,8 +12,8 @@ import static com.squareup.test.Runner.buildAndFail
 
 final class FunctionalSpec extends Specification {
 
-  private static final Path REPO = System.getProperty('rootDir').with {
-    Paths.get(it, 'app/build/for-tests')
+  private static final String REPO = System.getProperty('rootDir').with {
+    Paths.get(it, 'app/build/for-tests').toString().replace('\\', '\\\\')
   }
 
   @TempDir

@@ -15,8 +15,11 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 # for example, use this to sort a sub-tree
 ./path/to/sort features
 
-# for example, use this to sort a single file
-./path/to/sort my/app/build.gradle[.kts]
+# for example, use this to sort individual files
+./path/to/sort my/app/build.gradle[.kts] my/app2/build.gradle[.kts]
+
+# for example, use this to sort a subtree and a file
+./path/to/sort features my/app2/build.gradle[.kts]
 
 # Check sort status
 ./path/to/sort -m check <paths as above>
@@ -26,6 +29,8 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 ### Gradle plugin
 
 #### Apply it
+
+![Maven Central](https://img.shields.io/maven-central/v/com.squareup.sort-dependencies/com.squareup.sort-dependencies.gradle.plugin)
 
 ```groovy
 // build.gradle[.kts]
