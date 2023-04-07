@@ -41,7 +41,7 @@ dependency
     ;
 
 externalDependency
-    :   ID
+    :   ID (PARENS_OPEN PARENS_CLOSE)?
     ;
 
 projectDependency
