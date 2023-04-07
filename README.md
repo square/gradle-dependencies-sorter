@@ -60,6 +60,14 @@ plugins {
 ./gradlew check
 ```
 
+## CLI
+
+A fat jar of the CLI is available on Maven Central. Replace `$version` with the latest version.
+
+```
+https://repo1.maven.org/maven2/com/squareup/sort-gradle-dependencies-app/$version/sort-gradle-dependencies-app-$version-all.jar
+```
+
 ## Build it
 
 ### Publish everything to maven local
@@ -76,7 +84,7 @@ This will push all of this project's artifacts to `~/.m2/repository/`.
 ./gradlew :app:shadowDistZip
 ```
 
-This creates a zip file of the distribution at `app/build/distributions/`. This archive may be installed anywhere you 
+This creates a zip file of the distribution at `app/build/distributions/`. This archive may be installed anywhere you
 like.
 
 ### Install CLI app
