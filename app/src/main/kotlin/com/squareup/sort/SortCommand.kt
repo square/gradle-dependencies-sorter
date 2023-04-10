@@ -17,12 +17,10 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.time.Instant
 import java.util.concurrent.Callable
-import kotlin.io.path.createDirectories
+import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -82,7 +80,7 @@ class SortCommand(
   lateinit var paths: List<String>
 
   override fun call(): Int {
-    logger = logger(fileSystem, quiet)
+    logger = logger(quiet)
     if (!this::paths.isInitialized) {
       logger.error("No paths were passed. See 'help' for usage information.")
       return NO_PATH_PASSED.value
@@ -240,16 +238,10 @@ enum class Status(val value: Int) {
   ;
 }
 
-private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
-  val logDir = fileSystem.getPath(
-    System.getProperty("java.io.tmpdir"),
-    "dependencies-sorter"
-  ).createDirectories()
-  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
-
+private fun logger(quiet: Boolean): DelegatingLogger {
   return DelegatingLogger(
     delegate = LoggerFactory.getLogger("Sorter"),
-    file = logFile,
+    file = createTempFile(),
     quiet = quiet,
   )
 }
