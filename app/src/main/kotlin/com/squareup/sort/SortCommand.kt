@@ -11,19 +11,16 @@ import com.squareup.sort.Status.SUCCESS
 import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.event.Level
 import picocli.CommandLine.Command
 import picocli.CommandLine.HelpCommand
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.time.Instant
 import java.util.concurrent.Callable
-import kotlin.io.path.createDirectories
+import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -59,6 +56,15 @@ class SortCommand(
   var quiet: Boolean = false
 
   @Option(
+    names = ["--skip-hidden-and-build-dirs"],
+    description = [
+      "Flag to control whether file tree walking looks in build and hidden directories. True by default."
+    ],
+    defaultValue = "true"
+  )
+  var skipHiddenAndBuildDirs: Boolean = true
+
+  @Option(
     names = ["-m", "--mode"],
     description = [
       "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
@@ -74,7 +80,7 @@ class SortCommand(
   lateinit var paths: List<String>
 
   override fun call(): Int {
-    logger = logger(fileSystem, quiet)
+    logger = logger(quiet)
     if (!this::paths.isInitialized) {
       logger.error("No paths were passed. See 'help' for usage information.")
       return NO_PATH_PASSED.value
@@ -84,7 +90,11 @@ class SortCommand(
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
     val start = System.currentTimeMillis()
-    val filesToSort = buildFileFinder.of(pwd, paths).buildDotGradles
+    val filesToSort = buildFileFinder.of(
+      root = pwd,
+      searchPaths = paths,
+      skipHiddenAndBuildDirs = skipHiddenAndBuildDirs
+    ).buildDotGradles
     val findFileTime = System.currentTimeMillis()
 
     if (filesToSort.isEmpty()) {
@@ -228,16 +238,10 @@ enum class Status(val value: Int) {
   ;
 }
 
-private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
-  val logDir = fileSystem.getPath(
-    System.getProperty("java.io.tmpdir"),
-    "dependencies-sorter"
-  ).createDirectories()
-  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
-
+private fun logger(quiet: Boolean): DelegatingLogger {
   return DelegatingLogger(
     delegate = LoggerFactory.getLogger("Sorter"),
-    file = logFile,
+    file = createTempFile(),
     quiet = quiet,
   )
 }

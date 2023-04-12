@@ -1,11 +1,8 @@
 package com.squareup.sort
 
 import com.squareup.grammar.GradleGroovyScript.QuoteContext
-import org.antlr.v4.runtime.CommonTokenStream
 
-internal class DependencyComparator(
-  private val tokens: CommonTokenStream
-) : Comparator<DependencyDeclaration> {
+internal class DependencyComparator : Comparator<DependencyDeclaration> {
 
   override fun compare(
     left: DependencyDeclaration,
@@ -41,11 +38,8 @@ internal class DependencyComparator(
     left: DependencyDeclaration,
     right: DependencyDeclaration
   ): Int {
-    // Colons should sort "higher" than hyphens. The comma's ascii value is 44, the hyphen's is 45, and
-    // the colon's is 58. We replace colons with commas and then rely on natural sort order from there.
-    // Similarly, single and double quotes have different values, but we don't care about that for our purposes.
-    val leftText = tokens.getText(left.dependency).replace(':', ',').replace("'", "\"")
-    val rightText = tokens.getText(right.dependency).replace(':', ',').replace("'", "\"")
+    val leftText = left.comparisonText()
+    val rightText = right.comparisonText()
 
     // Get natural sort order
     val c = leftText.compareTo(rightText)
@@ -71,5 +65,34 @@ internal class DependencyComparator(
   private fun DependencyDeclaration.hasQuotes(): Boolean {
     val i = declaration.children.indexOf(dependency)
     return declaration.getChild(i - 1) is QuoteContext && declaration.getChild(i + 1) is QuoteContext
+  }
+
+  private fun DependencyDeclaration.comparisonText(): String {
+    val text = when {
+      isProjectDependency() -> with (dependency.projectDependency()) {
+        // If project(path: 'foo') syntax is used, take the path value.
+        // Else, if project('foo') syntax is used, take the ID.
+        projectMapEntry().firstOrNull { it.key.text == "path:" }?.value?.text
+          ?: ID().text
+      }
+      isFileDependency() -> dependency.fileDependency().ID().text
+      else -> dependency.externalDependency().ID().text
+    }
+
+    /*
+     * Colons should sort "higher" than hyphens. The comma's ASCII value
+     * is 44, the hyphen's is 45, and the colon's is 58. We replace
+     * colons with commas and then rely on natural sort order from
+     * there.
+     *
+     * For example, consider ':foo-bar' vs. ':foo:bar'. Before this
+     * transformation, ':foo-bar' will appear before ':foo:bar'. But
+     * after it, we compare ',foo,bar' to ',foo-bar', which gives the
+     * desired sort ordering.
+     *
+     * Similarly, single and double quotes have different ASCII values,
+     * but we don't care about that for our purposes.
+     */
+    return text.replace(':', ',').replace("'", "\"")
   }
 }
