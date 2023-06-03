@@ -20,7 +20,7 @@ block
 
 normalDeclaration
     :   configuration PARENS_OPEN? quote? dependency quote? PARENS_CLOSE? closure?
-    |   configuration PARENS_OPEN quote ID quote COMMA dependency PARENS_CLOSE? closure?
+    |   configuration PARENS_OPEN quote? ID quote? COMMA dependency PARENS_CLOSE? closure?
     ;
 
 testFixturesDeclaration
