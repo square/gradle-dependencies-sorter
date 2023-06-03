@@ -82,6 +82,7 @@ text
     | PARENS_OPEN
     | PARENS_CLOSE
     | BACKSLASH
+    | PROJECT
     | COMMA
     ;
 
