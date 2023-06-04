@@ -438,7 +438,7 @@ final class SorterSpec extends Specification {
     )).inOrder()
   }
 
-    def "sort add function call in depedencies"() {
+    def "sort add function call in dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle')
     Files.writeString(buildScript,
@@ -451,6 +451,7 @@ final class SorterSpec extends Specification {
             api(projects.bar)
 
             add("debugImplementation", projects.foo)
+            add(releaseImplementation, projects.foo)
           }
         '''.stripIndent())
 
@@ -464,6 +465,7 @@ final class SorterSpec extends Specification {
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf('''\
           dependencies {
             add("debugImplementation", projects.foo)
+            add(releaseImplementation, projects.foo)
 
             api(projects.bar)
             api(projects.foo)
