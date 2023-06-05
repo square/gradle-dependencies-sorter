@@ -3,7 +3,7 @@ package com.squareup.sort
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 @Suppress("unused")
 class SortDependenciesPlugin : Plugin<Project> {
@@ -19,8 +19,8 @@ class SortDependenciesPlugin : Plugin<Project> {
     val checkTask = tasks.register("checkSortDependencies", SortDependenciesTask::class.java) { t ->
       t.configure("check", target)
     }
-    pluginManager.withPlugin("java-base") {
-      target.project.tasks.named(JavaBasePlugin.CHECK_TASK_NAME, Task::class.java).configure {
+    pluginManager.withPlugin("lifecycle-base") {
+      target.project.tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME, Task::class.java).configure {
         it.dependsOn(checkTask)
       }
     }
