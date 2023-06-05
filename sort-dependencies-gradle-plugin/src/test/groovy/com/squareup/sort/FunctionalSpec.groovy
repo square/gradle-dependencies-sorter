@@ -33,12 +33,12 @@ final class FunctionalSpec extends Specification {
         id 'java-library'
         id 'com.squareup.sort-dependencies'
       }
-      
+
       repositories {
         mavenCentral()
         maven { url '$REPO' }
       }
-      
+
       dependencies {
         implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
         implementation('com.squareup.okhttp3:okhttp:4.10.0')
@@ -81,7 +81,7 @@ final class FunctionalSpec extends Specification {
     Files.writeString(buildScript, BUILD_SCRIPT)
 
     when: 'We sort dependencies'
-    def result = buildAndFail(dir, 'sortDependencies', '--mode', 'check')
+    def result = buildAndFail(dir, 'checkSortDependencies')
 
     then: 'Dependencies are not sorted'
     result.output.contains('1 scripts are not ordered correctly.')
@@ -92,12 +92,12 @@ final class FunctionalSpec extends Specification {
       id 'java-library'
       id 'com.squareup.sort-dependencies'
     }
-    
+
     repositories {
       mavenCentral()
       maven { url '$REPO' }
     }
-    
+
     dependencies {
       implementation('com.squareup.okio:okio:3.2.0')
       implementation('com.squareup.okhttp3:okhttp:4.10.0')
@@ -110,12 +110,12 @@ final class FunctionalSpec extends Specification {
       `java-library`
       id("com.squareup.sort-dependencies")
     }
-    
+
     repositories {
       mavenCentral()
       maven { url = uri("$REPO") }
     }
-    
+
     dependencies {
       implementation("com.squareup.okio:okio:3.2.0")
       implementation("com.squareup.okhttp3:okhttp:4.10.0")
