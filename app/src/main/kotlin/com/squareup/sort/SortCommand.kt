@@ -44,8 +44,6 @@ class SortCommand(
   private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
 ) : Callable<Int> {
 
-  private lateinit var logger: Logger
-
   @Option(
     names = ["-q", "--quiet"],
     description = [
@@ -80,7 +78,11 @@ class SortCommand(
   lateinit var paths: List<String>
 
   override fun call(): Int {
-    logger = logger(quiet)
+    // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
+    return logger(quiet).use(::callWithLogger)
+  }
+
+  private fun callWithLogger(logger: DelegatingLogger): Int {
     if (!this::paths.isInitialized) {
       logger.error("No paths were passed. See 'help' for usage information.")
       return NO_PATH_PASSED.value
@@ -107,8 +109,8 @@ class SortCommand(
     }
 
     val status = when (mode) {
-      "sort" -> sort(filesToSort, findFileTime)
-      "check" -> check(filesToSort, findFileTime, pwd)
+      "sort" -> sort(filesToSort, findFileTime, logger)
+      "check" -> check(filesToSort, findFileTime, pwd, logger)
       else -> UNKNOWN_MODE
     }
 
@@ -117,7 +119,8 @@ class SortCommand(
 
   private fun sort(
     filesToSort: Set<Path>,
-    findFileTime: Long
+    findFileTime: Long,
+    logger: Logger,
   ): Status {
     // Rewrites every build.gradle it finds
     var successCount = 0
@@ -159,6 +162,7 @@ class SortCommand(
     filesToSort: Set<Path>,
     findFileTime: Long,
     pwd: Path,
+    logger: Logger,
   ): Status {
     val notSorted = mutableListOf<Path>()
     var parseErrorCount = 0
