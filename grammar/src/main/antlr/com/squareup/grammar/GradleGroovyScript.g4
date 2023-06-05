@@ -20,6 +20,7 @@ block
 
 normalDeclaration
     :   configuration PARENS_OPEN? quote? dependency quote? PARENS_CLOSE? closure?
+    |   configuration PARENS_OPEN quote? ID quote? COMMA dependency PARENS_CLOSE? closure?
     ;
 
 testFixturesDeclaration
@@ -41,11 +42,16 @@ dependency
     ;
 
 externalDependency
-    :   ID
+    :   ID (PARENS_OPEN PARENS_CLOSE)?
     ;
 
 projectDependency
     :   PROJECT PARENS_OPEN quote? ID quote? PARENS_CLOSE
+    |   PROJECT PARENS_OPEN projectMapEntry+ PARENS_CLOSE
+    ;
+
+projectMapEntry
+    :   WS? key=(CONFIGURATION|PATH) WS? quote? value=ID quote? WS? COMMA? WS?
     ;
 
 fileDependency
@@ -77,6 +83,8 @@ text
     | PARENS_OPEN
     | PARENS_CLOSE
     | BACKSLASH
+    | PROJECT
+    | COMMA
     ;
 
 // Sea of crap I don't care about

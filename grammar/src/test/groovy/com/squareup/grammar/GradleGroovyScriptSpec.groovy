@@ -28,32 +28,35 @@ final class GradleGroovyScriptSpec extends Specification {
       '''\
           import foo
           import static bar;
-    
+
           plugins {
             id 'foo'
           }
-          
+
           repositories {
             google()
             mavenCentral()
           }
-          
+
           apply plugin: 'bar'
           ext.magic = 42
-          
+
           android {
             whatever
           }
-          
+
           dependencies {
             implementation 'heart:of-gold:1.0'
             api project(":marvin")
-            
+            api gradleApi()
+            api localGroovy()
+            api gradleKotlinDsl()
+
             testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
               because "life's too short not to"
             }
           }
-          
+
           println 'hello, world'
         '''.stripIndent()
     )
@@ -63,8 +66,46 @@ final class GradleGroovyScriptSpec extends Specification {
 
     then:
     assertThat(list).containsExactly(
-      'heart:of-gold:1.0', 'project(":marvin")', 'pan-galactic:gargle-blaster:2.0-SNAPSHOT'
+      'heart:of-gold:1.0',
+      'project(":marvin")',
+      'gradleApi()',
+      'localGroovy()',
+      'gradleKotlinDsl()',
+      'pan-galactic:gargle-blaster:2.0-SNAPSHOT'
     )
+  }
+
+  def "ignores vendor extension block"() {
+    given:
+    def sourceFile = dir.resolve('build.gradle')
+    Files.writeString(
+      sourceFile,
+      '''\
+        plugins {
+            id "com.memefactory.conventions.android-library"
+        }
+
+        memeFactory {
+            dagger {
+                anvil {
+                    anvilGeneratorProjects = [project(':di:feature:compiler')]
+                    generateDaggerFactories()
+                }
+            }
+        }
+
+        dependencies {
+            api project(':not')
+            api project(':alpha:betical')
+        }
+        '''.stripIndent()
+    )
+
+    when:
+    def list = parseGroovyGradleScript(sourceFile)
+
+    then:
+    assertThat(list).containsExactly("project(':alpha:betical')", "project(':not')")
   }
 
   def "can parse complex script"() {
@@ -79,7 +120,7 @@ final class GradleGroovyScriptSpec extends Specification {
           import org.gradle.internal.jvm.Jvm
           import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
           import proguard.gradle.ProGuardTask
-          
+
           buildscript {
             repositories {
               maven {
@@ -91,7 +132,7 @@ final class GradleGroovyScriptSpec extends Specification {
               classpath 'com.guardsquare:proguard-gradle:7.1.0'
             }
           }
-          
+
           plugins {
             id 'build-logic-base-convention'
             id 'publish-artifactory-convention'
@@ -104,7 +145,7 @@ final class GradleGroovyScriptSpec extends Specification {
           group = 'com.foo.tools'
           version = '0.1.0'
           ext.projectName = 'foo-toolbox'
-          
+
           application {
             setApplicationDefaultJvmArgs([
                 '-XX:+IgnoreUnrecognizedVMOptions',
@@ -116,27 +157,27 @@ final class GradleGroovyScriptSpec extends Specification {
           configurations {
             proguard
           }
-          
+
           dependencies {
             implementation project(':aws')
             implementation platform(project(':platform'))
             implementation project(':xml-combiner')
-          
+
             implementation(libs.commonsCompress) {
               because 'Better ZipFile implementation'
             }
-          
+
             implementation(libs.jgit.core) {
               because 'Better than the command line git via ProcessBuilder.'
             }
-          
+
             implementation(libs.jgit.ssh.core) {
               because 'Ssh factory for jgit.'
             }
             implementation(libs.jgit.ssh.agent) {
               because 'Ssh Agent for jgit.'
             }
-          
+
             implementation libs.guava
             implementation libs.kotlin.serialization
             implementation libs.maven.artifact
@@ -151,7 +192,7 @@ final class GradleGroovyScriptSpec extends Specification {
             implementation libs.sentry
             implementation libs.slf4j.simple
             implementation libs.koin
-          
+
             // Proguard needs these available for processing, but we don't need them at runtime.
             proguard libs.j2objc
             proguard libs.checker
@@ -163,14 +204,14 @@ final class GradleGroovyScriptSpec extends Specification {
             proguard(libs.proguard.ibm.icu) {
               because 'com.android.tools:sdklib'
             }
-          
+
             testImplementation(libs.jimfs) {
               because 'create the filesystem in memory'
             }
             testImplementation libs.okhttp.mockwebserver
             testImplementation libs.xmlunit
           }
-          
+
           generate {
             sources {
               register('kotlin/com/foo/bar/Version.kt') {
@@ -178,7 +219,7 @@ final class GradleGroovyScriptSpec extends Specification {
                 template = """\
               @file:Suppress("PackageDirectoryMismatch") // false positive
               package com.foo.bar
-              
+
               object Version {
                 const val name = "sa-toolbox %version%"
               }
@@ -186,33 +227,33 @@ final class GradleGroovyScriptSpec extends Specification {
               }
             }
           }
-          
+
           tasks.withType(KotlinCompile).configureEach {
             kotlinOptions {
               jvmTarget = JavaVersion.VERSION_11
               allWarningsAsErrors = false
             }
           }
-          
+
           tasks.withType(Test).configureEach {
             useJUnitPlatform()
           }
-          
+
           // Copy distribution files needed for tests into build/resources/test
           tasks.named('processTestResources', ProcessResources) {
             from 'src/dist'
           }
-          
+
           /*
            * First we create a fat jar, and then we minify it, then finally we publish it.
            *
            * nb: This is largely copy-pasta from tools/projects/setup-ide-modules, and is therefore a good
            * candidate for turning into a plugin.
            */
-          
+
           // => "bar-1.0"
           ext.baseCoordinates = "${projectName}-${project.version}"
-          
+
           def shadowJar = tasks.named('shadowJar', ShadowJar) {
             doNotTrackState(
                 """\
@@ -220,18 +261,18 @@ final class GradleGroovyScriptSpec extends Specification {
                 See also https://github.com/johnrengelman/shadow/issues/62#issuecomment-877728948
                 """.stripIndent()
             )
-          
+
             group = 'Build'
             description = 'Produces a fat jar'
             archiveFileName = "${baseCoordinates}-all.jar"
             reproducibleFileOrder = true
-          
+
             from sourceSets.main.output
             from project.configurations.runtimeClasspath
-          
+
             exclude 'META-INF/maven/**'
           }
-          
+
           ext.packageFilters = [
               // org.jline.terminal is a dependency of 'me.tongfei:progressbar'. Jline does not appear to declare
               // any of its dependencies (per build scans). Filtering them means that Proguard doesn't attempt
@@ -239,47 +280,47 @@ final class GradleGroovyScriptSpec extends Specification {
               '!org/jline/terminal/impl/jna/**',
               '!org/jline/terminal/impl/jansi/**',
               '!org/jline/builtins/ssh/**',
-          
+
               // JGit has a number of apparently runtime-only dependencies (org.apache.sshd:sshd-common:2.7.0).
               '!org/apache/sshd/agent/unix/**',
               '!org/apache/sshd/agent/local/ProxyAgentFactory.class',
               '!org/apache/sshd/agent/local/ProxyAgentFactory$1.class',
               '!org/apache/sshd/common/util/security/bouncycastle/**',
           ].join(',')
-          
+
           def minify = tasks.register('minify', ProGuardTask) {
             // TODO: https://github.com/Guardsquare/proguard/issues/254
             notCompatibleWithConfigurationCache('Accesses Project at execution time')
-          
+
             configuration file('proguard.pro')
-          
+
             // injars: the classpath that must be processed
             injars(filter: packageFilters, shadowJar.flatMap { it.archiveFile })
             // libraryjars: on the classpath but not to be processed (i.e., the JDK)
             libraryjars(javaRuntime() + configurations.proguard)
-          
+
             // the minified jar output
             outjars(layout.buildDirectory.file("libs/${baseCoordinates}-minified.jar"))
           }
-          
+
           // This is a sanity check. You can execute `./gradlew runMin [--args="arg..."]` to verify that the
           // minified binary works.
           tasks.register('runMin', JavaExec) {
             classpath = files(minify)
           }
-          
+
           tasks.withType(Test).configureEach {
             // print out results on the command line
             testLogging {
               events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
             }
           }
-          
+
           tasks.withType(JavaExec).configureEach {
             // set all the gradlew runs to debug.
             setAllJvmArgs(getAllJvmArgs() + ["-Dorg.slf4j.simpleLogger.defaultLogLevel=DEBUG"])
           }
-          
+
           tasks.withType(CreateStartScripts).configureEach {
             applicationName = projectName
             // somehow, when setting the template, we lose the main class. Reset to make sure it's here.
@@ -287,23 +328,23 @@ final class GradleGroovyScriptSpec extends Specification {
             unixStartScriptGenerator.template =
                 resources.text.fromFile('src/main/shell/sa-toolbox-startup.sh.template')
           }
-          
+
           // Set our start script to have the minified binary as the classpath.
           def startShadowScripts = tasks.named('startShadowScripts', CreateStartScripts) {
             classpath = files(minify)
           }
-          
+
           // Zip the relevant files (there should be only two) into a single coherent archive.
           def minifiedDistZip = tasks.register('minifiedDistZip', Zip) { zipTask ->
             def zipRoot = "/${baseCoordinates}"
             zipTask.archiveBaseName.set(projectName)
             zipTask.archiveClassifier.set('minified')
-          
+
             // jar
             zipTask.from(minify) {
               into("$zipRoot/lib")
             }
-          
+
             // bash script
             zipTask.from(startShadowScripts) {
               exclude {
@@ -312,13 +353,13 @@ final class GradleGroovyScriptSpec extends Specification {
               }
               into("$zipRoot/bin")
             }
-          
+
             // raw files
             zipTask.from('src/dist') {
               into(zipRoot)
             }
           }
-          
+
           // This will unzip minifiedDistZip into a new directory, `binary`, in this project. That directory
           // should be checked in with git lfs and then a symlink created in the register root pointing to the
           // bash script at binary/bin/<app name>.
@@ -327,7 +368,7 @@ final class GradleGroovyScriptSpec extends Specification {
           // unzip.
           tasks.register('buildBinary', Sync) {
             dependsOn minifiedDistZip
-          
+
             from(zipTree(minifiedDistZip.flatMap { it.archiveFile })) {
               // drop the <app name>-<version>/ directory prefix
               eachFile { fcd ->
@@ -337,7 +378,7 @@ final class GradleGroovyScriptSpec extends Specification {
             }
             into layout.projectDirectory.dir('binary')
           }
-          
+
           // Not strictly necessary at this time, but a toehold if we ever decide to publish this artifact to
           // an external repo.
           publishing {
@@ -348,14 +389,14 @@ final class GradleGroovyScriptSpec extends Specification {
               }
             }
           }
-          
+
           /**
            * @return The JDK, for use by Proguard.
            */
           List<File> javaRuntime() {
             Jvm jvm = Jvm.current()
             FilenameFilter filter = { _, fileName -> fileName.endsWith(".jar") || fileName.endsWith(".jmod") }
-          
+
             return ['jmods' /* JDK 9+ */, 'bundle/Classes' /* mac */, 'jre/lib' /* linux */]
                 .collect { new File(jvm.javaHome, it) }
                 .findAll { it.exists() }
@@ -416,6 +457,7 @@ final class GradleGroovyScriptSpec extends Specification {
     def lexer = new GradleGroovyScriptLexer(input)
     def tokens = new CommonTokenStream(lexer)
     def parser = new GradleGroovyScript(tokens)
+    parser.addErrorListener(new SimpleANTLRErrorListener({ throw it }))
 
     def tree = parser.script()
     def walker = new ParseTreeWalker()

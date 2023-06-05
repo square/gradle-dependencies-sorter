@@ -17,12 +17,10 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.time.Instant
 import java.util.concurrent.Callable
-import kotlin.io.path.createDirectories
+import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
@@ -81,7 +79,7 @@ class SortCommand(
 
   override fun call(): Int {
     // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
-    return logger(fileSystem, quiet).use(::callWithLogger)
+    return logger(quiet).use(::callWithLogger)
   }
 
   private fun callWithLogger(logger: DelegatingLogger): Int {
@@ -244,16 +242,10 @@ enum class Status(val value: Int) {
   ;
 }
 
-private fun logger(fileSystem: FileSystem, quiet: Boolean): DelegatingLogger {
-  val logDir = fileSystem.getPath(
-    System.getProperty("java.io.tmpdir"),
-    "dependencies-sorter"
-  ).createDirectories()
-  val logFile = Files.createFile(logDir.resolve("${Instant.now().toString().replace(":", "-")}.log"))
-
+private fun logger(quiet: Boolean): DelegatingLogger {
   return DelegatingLogger(
     delegate = LoggerFactory.getLogger("Sorter"),
-    file = logFile,
+    file = createTempFile(),
     quiet = quiet,
   )
 }
