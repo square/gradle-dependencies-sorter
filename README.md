@@ -45,14 +45,16 @@ plugins {
 ./gradlew :my:app:sortDependencies
 
 # Identical to the above
-./gradlew :my:app:sortDependencies --mode sort
+./gradlew :my:app:sortDependencies
 ```
 
 #### Check it
 
 ```shell
-./gradlew :my:app:sortDependencies --mode check
+./gradlew :my:app:checkSortDependencies
 ```
+
+This task is automatically added as a dependency to the `check` task.
 
 ## Test it
 

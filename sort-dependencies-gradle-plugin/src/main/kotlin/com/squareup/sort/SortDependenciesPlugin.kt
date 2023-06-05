@@ -2,6 +2,8 @@ package com.squareup.sort
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 @Suppress("unused")
 class SortDependenciesPlugin : Plugin<Project> {
@@ -12,18 +14,28 @@ class SortDependenciesPlugin : Plugin<Project> {
 
   override fun apply(target: Project): Unit = target.run {
     tasks.register("sortDependencies", SortDependenciesTask::class.java) { t ->
-      with(t) {
-        val version = javaClass.classLoader.getResourceAsStream(VERSION_FILENAME)
-          ?.bufferedReader()
-          ?.use { it.readLine() }
-          ?: error("Can't find $VERSION_FILENAME")
-        val coordinates = "com.squareup:sort-gradle-dependencies-app:$version"
-        val app = configurations.detachedConfiguration(dependencies.create(coordinates))
-
-        buildScript.set(buildFile)
-        sortProgram.setFrom(app)
-        mode.convention("sort")
+      t.configure("sort", target)
+    }
+    val checkTask = tasks.register("checkSortDependencies", SortDependenciesTask::class.java) { t ->
+      t.configure("check", target)
+    }
+    pluginManager.withPlugin("lifecycle-base") {
+      target.project.tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME, Task::class.java).configure {
+        it.dependsOn(checkTask)
       }
     }
+  }
+
+  private fun SortDependenciesTask.configure(mode: String, project: Project) {
+      val version = javaClass.classLoader.getResourceAsStream(VERSION_FILENAME)
+        ?.bufferedReader()
+        ?.use { it.readLine() }
+        ?: error("Can't find $VERSION_FILENAME")
+      val coordinates = "com.squareup:sort-gradle-dependencies-app:$version"
+      val app = project.configurations.detachedConfiguration(project.dependencies.create(coordinates))
+
+      buildScript.set(project.buildFile)
+      sortProgram.setFrom(app)
+      this.mode.set(mode)
   }
 }

@@ -37,8 +37,6 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:InputFiles
   abstract val sortProgram: ConfigurableFileCollection
 
-  @get:Optional
-  @get:Option(option = "mode", description = "The sort mode. May be 'check' or 'sort'.")
   @get:Input
   abstract val mode: Property<String>
 
