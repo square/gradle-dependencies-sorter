@@ -81,7 +81,7 @@ final class FunctionalSpec extends Specification {
     Files.writeString(buildScript, BUILD_SCRIPT)
 
     when: 'We sort dependencies'
-    def result = buildAndFail(dir, 'checkSortDependencies')
+    def result = buildAndFail(dir, 'checkSortDependencies', '--verbose')
 
     then: 'Dependencies are not sorted'
     result.output.contains('1 scripts are not ordered correctly.')

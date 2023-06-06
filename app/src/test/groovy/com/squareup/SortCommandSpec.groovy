@@ -20,10 +20,10 @@ final class SortCommandSpec extends Specification {
     def commandLine = new CommandLine(newSortCommand())
 
     when:
-    def parseResult = commandLine.parseArgs('-m', 'check', '-q')
+    def parseResult = commandLine.parseArgs('-m', 'check', '-v')
 
     then:
-    parseResult.expandedArgs() == ['-m', 'check', '-q']
+    parseResult.expandedArgs() == ['-m', 'check', '-v']
   }
 
   private SortCommand newSortCommand() {

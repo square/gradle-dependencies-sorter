@@ -40,10 +40,16 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:Input
   abstract val mode: Property<String>
 
+  @get:Optional
+  @get:Option(option = "verbose", description = "Enables verbose logging.")
+  @get:Input
+  abstract val verbose: Property<Boolean>
+
   @TaskAction
   fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
+    val verbose = verbose.getOrElse(false)
 
     if (mode != "check" && mode != "sort") {
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
@@ -58,7 +64,9 @@ abstract class SortDependenciesTask @Inject constructor(
         args = listOf(
           buildScript,
           "--mode",
-          mode
+          mode,
+          "--verbose",
+          verbose.toString()
         )
       }
     }

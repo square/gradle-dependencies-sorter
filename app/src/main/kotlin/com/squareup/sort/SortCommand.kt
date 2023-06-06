@@ -45,13 +45,13 @@ class SortCommand(
 ) : Callable<Int> {
 
   @Option(
-    names = ["-q", "--quiet"],
+    names = ["-v", "--verbose"],
     description = [
-      "Quiet mode. Only print errors. Logs are still written to a log file."
+      "Verbose mode. All logs are printed."
     ],
     defaultValue = "false"
   )
-  var quiet: Boolean = false
+  var verbose: Boolean = false
 
   @Option(
     names = ["--skip-hidden-and-build-dirs"],
@@ -79,7 +79,7 @@ class SortCommand(
 
   override fun call(): Int {
     // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
-    return logger(quiet).use(::callWithLogger)
+    return logger(!verbose).use(::callWithLogger)
   }
 
   private fun callWithLogger(logger: DelegatingLogger): Int {
