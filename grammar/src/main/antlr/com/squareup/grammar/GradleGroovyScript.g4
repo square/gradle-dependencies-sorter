@@ -3,7 +3,7 @@ parser grammar GradleGroovyScript;
 options { tokenVocab=GradleGroovyScriptLexer; }
 
 script
-    :   (dependencies|buildscript|text)* EOF
+    :   (text|dependencies|buildscript)* EOF
     ;
 
 dependencies
