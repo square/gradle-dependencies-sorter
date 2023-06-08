@@ -12,7 +12,7 @@ final class SimpleANTLRErrorListener implements ANTLRErrorListener {
   private Closure<RuntimeException> onError
 
   SimpleANTLRErrorListener(Closure<RuntimeException> onError) {
-    this.onError = onError;
+    this.onError = onError
   }
 
   @Override

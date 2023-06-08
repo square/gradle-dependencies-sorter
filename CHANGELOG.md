@@ -1,7 +1,6 @@
 # gradle-dependencies-sorter
 
 ## Version 0.3
-
 * Replace `--quiet` with `--verbose` flag. The CLI and gradle plugin now run in quiet mode by default, and can be made verbose with `--verbose`.
 * Split Gradle tasks into `sortDependencies` (which sorts) and `checkSortDependencies` (which checks that dependencies are sorted). The latter is automatically added as a dependency of the `check` lifecycle task too.
 * New: Support `add(configuration, dependency)` notation. Thanks to [@kozaxinan](https://github.com/kozaxinan) for the contribution.
