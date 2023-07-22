@@ -41,6 +41,11 @@ abstract class SortDependenciesTask @Inject constructor(
   abstract val mode: Property<String>
 
   @get:Optional
+  @get:Option(option = "strict", description = "Enables strict mode.")
+  @get:Input
+  abstract val strict: Property<Boolean>
+
+  @get:Optional
   @get:Option(option = "verbose", description = "Enables verbose logging.")
   @get:Input
   abstract val verbose: Property<Boolean>
@@ -50,6 +55,7 @@ abstract class SortDependenciesTask @Inject constructor(
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
     val verbose = verbose.getOrElse(false)
+    val strict = strict.getOrElse(true)
 
     if (mode != "check" && mode != "sort") {
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
@@ -57,7 +63,7 @@ abstract class SortDependenciesTask @Inject constructor(
 
     logger.quiet("Sorting '$buildScript' using mode '$mode'.")
 
-    execOps.javaexec { javaExecSpec ->
+    val result = execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {
         mainClass.set("com.squareup.sort.MainKt")
         classpath = sortProgram
@@ -70,5 +76,6 @@ abstract class SortDependenciesTask @Inject constructor(
         )
       }
     }
+    if (strict) result.rethrowFailure()
   }
 }

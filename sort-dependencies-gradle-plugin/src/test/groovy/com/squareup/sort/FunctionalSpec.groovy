@@ -122,4 +122,34 @@ final class FunctionalSpec extends Specification {
       implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
     }
   """.stripIndent()
+
+  def "rethrow failure in case of parsing error"() {
+    given: 'A build script with parsing error'
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript, """\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+  
+      repositories {
+        mavenCentral()
+        maven { url = uri("$REPO") }
+      }
+  
+      dependencies {
+        // This syntax, while still valid, is currently not supported by our parser.
+        implementation(platform("com.squareup.okhttp3" + ":" + "okhttp-bom" + ":" + "4.10.0"))
+      }
+    """.stripIndent())
+
+    when: 'We sort dependencies'
+    def result = buildAndFail(dir, 'sortDependencies', '--verbose')
+
+    then: 'Build fails with parsing errors'
+    result.output.contains('Parse errors:     1')
+    result.output.contains('FAILURE: Build failed with an exception.')
+    result.output.contains('Execution failed for task \':sortDependencies\'.')
+    result.output.contains('finished with non-zero exit value 5')
+  }
 }
