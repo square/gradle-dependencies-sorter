@@ -63,7 +63,7 @@ abstract class SortDependenciesTask @Inject constructor(
 
     logger.quiet("Sorting '$buildScript' using mode '$mode'.")
 
-    val result = execOps.javaexec { javaExecSpec ->
+    execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {
         mainClass.set("com.squareup.sort.MainKt")
         classpath = sortProgram
@@ -74,8 +74,8 @@ abstract class SortDependenciesTask @Inject constructor(
           "--verbose",
           verbose.toString()
         )
+        isIgnoreExitValue = !strict
       }
     }
-    if (strict) result.rethrowFailure()
   }
 }
