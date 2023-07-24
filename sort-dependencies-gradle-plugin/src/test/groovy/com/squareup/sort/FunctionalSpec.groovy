@@ -143,8 +143,8 @@ final class FunctionalSpec extends Specification {
       }
     """.stripIndent())
 
-    when: 'We sort dependencies'
-    def result = buildAndFail(dir, 'sortDependencies', '--verbose')
+    when: 'We sort dependencies with strict mode'
+    def result = buildAndFail(dir, 'sortDependencies', '--verbose', '--strict')
 
     then: 'Build fails with parsing errors'
     result.output.contains('Parse errors:     1')
