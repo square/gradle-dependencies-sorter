@@ -55,7 +55,7 @@ abstract class SortDependenciesTask @Inject constructor(
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
     val verbose = verbose.getOrElse(false)
-    val strict = strict.getOrElse(true)
+    val strict = strict.getOrElse(false)
 
     if (mode != "check" && mode != "sort") {
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
