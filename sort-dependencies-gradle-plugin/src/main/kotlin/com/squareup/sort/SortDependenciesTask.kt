@@ -41,7 +41,7 @@ abstract class SortDependenciesTask @Inject constructor(
   abstract val mode: Property<String>
 
   @get:Optional
-  @get:Option(option = "strict", description = "Enables strict mode.")
+  @get:Option(option = "strict", description = "Enables strict mode, which will cause this task to fail if there is an error parsing or sorting the dependencies. Default is false.")
   @get:Input
   abstract val strict: Property<Boolean>
 
