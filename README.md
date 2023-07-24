@@ -56,6 +56,10 @@ plugins {
 
 This task is automatically added as a dependency to the `check` task.
 
+#### Enforce it
+
+Enable strict mode with `--strict` parameter to fail the tasks if there is an error parsing or sorting the dependencies.
+
 ## Test it
 
 ```shell
