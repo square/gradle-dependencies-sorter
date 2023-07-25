@@ -21,8 +21,16 @@ tasks.named('generateGrammarSource', AntlrTask) {
   ]
 }
 // Workaround for https://github.com/gradle/gradle/issues/19555
-tasks.named("sourcesJar") {
-  dependsOn("generateGrammarSource")
+tasks.named('sourcesJar') {
+  dependsOn('generateGrammarSource')
+}
+
+// Workaround for https://github.com/gradle/gradle/issues/25885
+// Technically it should be `explodeCodeSourceMain dependsOn generateGrammarSource` and
+// `explodeCodeSourceTest dependsOn generateTestGrammarSource`, but this module is so
+// small it isn't worth fine-tuning it.
+tasks.withType(com.autonomousapps.tasks.CodeSourceExploderTask) {
+  dependsOn('generateGrammarSource', 'generateTestGrammarSource')
 }
 
 dependencies {
