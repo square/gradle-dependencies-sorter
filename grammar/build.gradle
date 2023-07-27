@@ -34,8 +34,10 @@ tasks.withType(com.autonomousapps.tasks.CodeSourceExploderTask) {
 }
 
 dependencies {
-  antlr libs.antlr.core
-  api libs.antlr.runtime
+  antlr(libs.antlr.core) { 
+    exclude group: 'com.ibm.icu', module: 'icu4j'
+  }
+  runtimeOnly libs.antlr.runtime
 
   testImplementation libs.spock
 }
