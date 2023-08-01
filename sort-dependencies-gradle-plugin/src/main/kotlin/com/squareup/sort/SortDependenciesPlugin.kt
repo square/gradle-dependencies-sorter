@@ -12,16 +12,22 @@ class SortDependenciesPlugin : Plugin<Project> {
     const val VERSION_FILENAME = "com-squareup-sort-version.txt"
   }
 
-  private lateinit var sortApp: Configuration
-
   override fun apply(target: Project): Unit = target.run {
-    sortApp = sortApp(this)
+    val extension = SortDependenciesExtension.create(this)
+    // nb: Can't use a detached configuration because that needs a Dependency, not a dependency notation. The latter can
+    // be lazily evaluated (as below) while the former needs to (e.g.) know its version eagerly: it is more constrained.
+    val sortApp = configurations.maybeCreate("sortDependencies").apply {
+      target.dependencies.add(
+        name,
+        extension.version.map { v -> "com.squareup:sort-gradle-dependencies-app:$v" }
+      )
+    }
 
     tasks.register("sortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("sort", target)
+      t.configure("sort", target, sortApp)
     }
     val checkTask = tasks.register("checkSortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("check", target)
+      t.configure("check", target, sortApp)
     }
 
     pluginManager.withPlugin("lifecycle-base") {
@@ -31,19 +37,13 @@ class SortDependenciesPlugin : Plugin<Project> {
     }
   }
 
-  private fun SortDependenciesTask.configure(mode: String, project: Project) {
+  private fun SortDependenciesTask.configure(
+    mode: String,
+    project: Project,
+    sortApp: Configuration
+  ) {
     buildScript.set(project.buildFile)
     sortProgram.setFrom(sortApp)
     this.mode.set(mode)
-  }
-
-  private fun sortApp(project: Project): Configuration {
-    val version = javaClass.classLoader.getResourceAsStream(VERSION_FILENAME)
-      ?.bufferedReader()
-      ?.use { it.readLine() }
-      ?: error("Can't find $VERSION_FILENAME")
-    val coordinates = "com.squareup:sort-gradle-dependencies-app:$version"
-
-    return project.configurations.detachedConfiguration(project.dependencies.create(coordinates))
   }
 }
