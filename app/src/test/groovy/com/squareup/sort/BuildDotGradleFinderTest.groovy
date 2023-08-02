@@ -30,8 +30,11 @@ class BuildDotGradleFinderTest extends Specification {
         when: 'Searching for Gradle build files'
         def results = finder.buildDotGradles
 
-        then: 'Some Gradle build files are found'
-        assertThat(results).hasSize(2)
+        then: 'Gradle build files are found'
+        assertThat(results).containsExactly(
+                dir.resolve("build.gradle.kts"),
+                dir.resolve("app/build.gradle")
+        )
     }
 
 }
