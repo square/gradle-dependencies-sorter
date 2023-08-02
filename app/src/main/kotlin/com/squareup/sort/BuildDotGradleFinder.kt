@@ -18,7 +18,7 @@ class BuildDotGradleFinder(
 
   val buildDotGradles: Set<Path> = searchPaths.asSequence()
     // nb, if the path passed to the resolve method is already an absolute path, it returns that.
-    .map { root.resolve(it) }
+    .map { root.resolve(it).normalize() }
     .flatMap { searchPath ->
       if (searchPath.isBuildDotGradle()) {
         sequenceOf(searchPath)
