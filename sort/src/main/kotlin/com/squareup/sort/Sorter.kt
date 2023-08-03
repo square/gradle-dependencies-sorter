@@ -33,19 +33,19 @@ public class Sorter private constructor(
   private var smartIndentSet = false
   private var indent = "  "
 
+  // TODO we can probably sort this block too.
   private var isInBuildScriptBlock = false
 
   private val dependencyComparator = DependencyComparator()
   private val dependenciesByConfiguration = mutableMapOf<String, MutableList<DependencyDeclaration>>()
-  private val dependenciesInOrder = mutableListOf<DependencyDeclaration>()
-  private var alreadyOrdered = false
+  private val ordering = Ordering(tokens)
 
   private fun collectDependency(
     configuration: String,
     dependencyDeclaration: DependencyDeclaration
   ) {
     setIndent(dependencyDeclaration.declaration)
-    dependenciesInOrder += dependencyDeclaration
+    ordering.collectDependency(dependencyDeclaration)
     dependenciesByConfiguration.merge(configuration, mutableListOf(dependencyDeclaration)) { acc, inc ->
       acc.apply { addAll(inc) }
     }
@@ -64,11 +64,9 @@ public class Sorter private constructor(
   /**
    * Returns the sorted build script.
    *
-   * Throws [BuildScriptParseException] if the script has some
-   * idiosyncrasy that impairs parsing.
+   * Throws [BuildScriptParseException] if the script has some idiosyncrasy that impairs parsing.
    *
-   * Throws [AlreadyOrderedException] if the script is already
-   * sorted correctly.
+   * Throws [AlreadyOrderedException] if the script is already sorted correctly.
    */
   @Throws(BuildScriptParseException::class, AlreadyOrderedException::class)
   public fun rewritten(): String {
@@ -80,11 +78,8 @@ public class Sorter private constructor(
     return rewriter.text
   }
 
-  /**
-   * Returns `true` if this file's dependencies are already sorted correctly, or if there are no
-   * dependencies.
-   */
-  public fun isSorted(): Boolean = alreadyOrdered || dependenciesByConfiguration.isEmpty()
+  /** Returns `true` if this file's dependencies are already sorted correctly, or if there are no dependencies. */
+  public fun isSorted(): Boolean = ordering.isAlreadyOrdered()
 
   /** Returns `true` if there were errors parsing the build script. */
   public fun hasParseErrors(): Boolean = errorListener.errorMessages.isNotEmpty()
@@ -124,6 +119,9 @@ public class Sorter private constructor(
   override fun exitDependencies(ctx: DependenciesContext) {
     if (isInBuildScriptBlock) return
     rewriter.replace(ctx.start, ctx.stop, dependenciesBlock())
+
+    // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
+    dependenciesByConfiguration.clear()
   }
 
   private fun dependenciesBlock() = buildString {
@@ -133,12 +131,10 @@ public class Sorter private constructor(
     dependenciesByConfiguration.entries.sortedWith(ConfigurationComparator)
       .forEachIndexed { i, entry ->
         if (i != 0) appendLine()
-        data class Texts(val comment: String?, val declarationText: String)
         entry.value.sortedWith(dependencyComparator)
           .map { dependency ->
             dependency to Texts(
-              comment = tokens.getHiddenTokensToLeft(dependency.declaration.start.tokenIndex, GradleGroovyScriptLexer.COMMENTS)
-                ?.joinToString(separator = "") { "$indent${it.text}" }?.trimEnd(),
+              comment = precedingComment(dependency),
               declarationText = tokens.getText(dependency.declaration),
             )
           }
@@ -146,7 +142,7 @@ public class Sorter private constructor(
           .forEach { (declaration, texts) ->
             newOrder += declaration
 
-            // Get preceding comments
+            // Write preceding comments if there are any
             if (texts.comment != null) appendLine(texts.comment)
 
             append(indent)
@@ -155,19 +151,17 @@ public class Sorter private constructor(
       }
     append("}")
 
-    // Check if the new ordering matches the old ordering. If so, we shouldn't rewrite the file.
-    alreadyOrdered = isSameOrder(dependenciesInOrder, newOrder)
+    // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
+    // dependencies blocks
+    ordering.checkOrdering(newOrder)
   }
 
-  private fun isSameOrder(
-    first: List<DependencyDeclaration>,
-    second: List<DependencyDeclaration>
-  ): Boolean {
-    if (first.size != second.size) return false
-    return first.zip(second).all { (l, r) ->
-      tokens.getText(l.declaration) == tokens.getText(r.declaration)
-    }
-  }
+  private fun precedingComment(dependency: DependencyDeclaration) = tokens.getHiddenTokensToLeft(
+    dependency.declaration.start.tokenIndex,
+    GradleGroovyScriptLexer.COMMENTS
+  )?.joinToString(separator = "") {
+    "$indent${it.text}"
+  }?.trimEnd()
 
   public companion object {
     @JvmStatic
@@ -216,6 +210,44 @@ internal class RewriterErrorListener : AbstractErrorListener() {
     errorMessages.add(msg)
   }
 }
+
+private class Ordering(
+  private val tokens: CommonTokenStream,
+) {
+
+  private val dependenciesInOrder = mutableListOf<DependencyDeclaration>()
+  private val orderedBlocks = mutableListOf<Boolean>()
+
+  fun isAlreadyOrdered(): Boolean = orderedBlocks.all { it }
+
+  fun collectDependency(dependency: DependencyDeclaration) {
+    dependenciesInOrder += dependency
+  }
+
+  /**
+   * Checks ordering as we leave a dependencies block. Clears the list of dependencies to prepare for the potential next
+   * block.
+   */
+  fun checkOrdering(newOrder: List<DependencyDeclaration>) {
+    orderedBlocks += isSameOrder(dependenciesInOrder, newOrder)
+    dependenciesInOrder.clear()
+  }
+
+  private fun isSameOrder(
+    first: List<DependencyDeclaration>,
+    second: List<DependencyDeclaration>
+  ): Boolean {
+    if (first.size != second.size) return false
+    return first.zip(second).all { (l, r) ->
+      tokens.getText(l.declaration) == tokens.getText(r.declaration)
+    }
+  }
+}
+
+private data class Texts(
+  val comment: String?,
+  val declarationText: String
+)
 
 private inline fun <C> C.ifNotEmpty(block: (C) -> Unit) where C : Collection<*> {
   if (isNotEmpty()) {

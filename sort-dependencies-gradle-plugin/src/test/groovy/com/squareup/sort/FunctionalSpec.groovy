@@ -19,6 +19,41 @@ final class FunctionalSpec extends Specification {
   @TempDir
   Path dir
 
+  def "can configure program version"() {
+    given: 'a build script that sets program version explicitly'
+    // nb: we can't easily use an earlier version because 0.2 doesn't support --verbose. The plugin code
+    // would have to be modified to be version/feature-aware.
+    def version = '0.3'
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript, buildScriptWithVersion(version))
+
+    when: 'We sort dependencies'
+    build(dir, 'sortDependencies')
+
+    then: 'Dependencies are sorted'
+    buildScript.text == """\
+      plugins {
+        id 'java-library'
+        id 'com.squareup.sort-dependencies'
+      }
+
+      sortDependencies {
+        version = '$version'
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url '$REPO' }
+      }
+
+      dependencies {
+        implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
+        implementation('com.squareup.okhttp3:okhttp:4.10.0')
+        implementation('com.squareup.okio:okio:3.2.0')
+      }
+    """.stripIndent()
+  }
+
   def "can sort build.gradle"() {
     given: 'A build script with unsorted dependencies'
     def buildScript = dir.resolve('build.gradle')
@@ -104,6 +139,30 @@ final class FunctionalSpec extends Specification {
       implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
     }
   """.stripIndent()
+
+  private String buildScriptWithVersion(String version) {
+    """\
+      plugins {
+        id 'java-library'
+        id 'com.squareup.sort-dependencies'
+      }
+
+      sortDependencies {
+        version = '$version'
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url '$REPO' }
+      }
+
+      dependencies {
+        implementation('com.squareup.okio:okio:3.2.0')
+        implementation('com.squareup.okhttp3:okhttp:4.10.0')
+        implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
+      }
+    """.stripIndent()
+  }
 
   private static final BUILD_SCRIPT_KTS = """\
     plugins {

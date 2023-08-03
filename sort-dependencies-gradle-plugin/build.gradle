@@ -27,6 +27,6 @@ tasks.named('test') {
 tasks.named('processResources') {
   inputs.property('version', version)
 
-  from 'version.txt'
+  from 'com-squareup-sort-version.txt'
   expand(version: version)
 }

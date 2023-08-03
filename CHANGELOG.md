@@ -1,5 +1,10 @@
 # gradle-dependencies-sorter
 
+## Version 0.4
+* New: Adds extension to permit setting custom program version.
+* Fix: Change resource name to avoid clobbering with other plugins.
+* Exclude icu4j from antlr dependency, reducing binary size.
+
 ## Version 0.3
 * Replace `--quiet` with `--verbose` flag. The CLI and gradle plugin now run in quiet mode by default, and can be made verbose with `--verbose`.
 * Split Gradle tasks into `sortDependencies` (which sorts) and `checkSortDependencies` (which checks that dependencies are sorted). The latter is automatically added as a dependency of the `check` lifecycle task too.
