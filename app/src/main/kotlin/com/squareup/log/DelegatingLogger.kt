@@ -41,7 +41,7 @@ class DelegatingLogger(
   override fun warn(msg: String) {
     file.appendLine("WARN: $msg")
     if (!quiet) {
-      delegate.trace(msg)
+      delegate.warn(msg)
     }
   }
 
