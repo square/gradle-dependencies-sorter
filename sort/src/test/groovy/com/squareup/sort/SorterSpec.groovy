@@ -22,46 +22,46 @@ final class SorterSpec extends Specification {
       '''\
           import foo
           import static bar;
-    
+
           plugins {
             id 'foo'
           }
-          
+
           repositories {
             google()
             mavenCentral()
           }
-          
+
           apply plugin: 'bar'
           ext.magic = 42
-          
+
           android {
             whatever
           }
-          
+
           dependencies {
             implementation 'heart:of-gold:1.0'
             api project(":marvin")
-            
+
             implementation 'b:1.0'
             implementation 'a:1.0'
             // Here's a multi-line comment
             // Here's the second line of the comment
             implementation deps.foo
-            
+
             /*
              * Here's a multiline comment.
              */
             implementation deps.bar
-            
+
             testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
               because "life's too short not to"
             }
-            
+
             implementation project(':milliways')
             api 'zzz:yyy:1.0'
           }
-          
+
           println 'hello, world'
         '''.stripIndent())
     def sorter = Sorter.sorterFor(buildScript)
@@ -71,27 +71,27 @@ final class SorterSpec extends Specification {
       '''\
           import foo
           import static bar;
-    
+
           plugins {
             id 'foo'
           }
-          
+
           repositories {
             google()
             mavenCentral()
           }
-          
+
           apply plugin: 'bar'
           ext.magic = 42
-          
+
           android {
             whatever
           }
-          
+
           dependencies {
             api project(":marvin")
             api 'zzz:yyy:1.0'
-            
+
             implementation project(':milliways')
             implementation 'a:1.0'
             implementation 'b:1.0'
@@ -103,12 +103,12 @@ final class SorterSpec extends Specification {
             // Here's a multi-line comment
             // Here's the second line of the comment
             implementation deps.foo
-            
+
             testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
               because "life's too short not to"
             }
           }
-          
+
           println 'hello, world'
         '''.stripIndent()
     )).inOrder()
@@ -122,22 +122,22 @@ final class SorterSpec extends Specification {
           dependencies {
               implementation 'heart:of-gold:1.0'
               api project(":marvin")
-              
+
               implementation 'b:1.0'
               implementation 'a:1.0'
               // Here's a multi-line comment
               // Here's the second line of the comment
               implementation deps.foo
-              
+
               /*
                * Here's a multiline comment.
                */
               implementation deps.bar
-              
+
               testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
                 because "life's too short not to"
               }
-              
+
               implementation project(':milliways')
               api 'zzz:yyy:1.0'
           }
@@ -150,7 +150,7 @@ final class SorterSpec extends Specification {
           dependencies {
               api project(":marvin")
               api 'zzz:yyy:1.0'
-              
+
               implementation project(':milliways')
               implementation 'a:1.0'
               implementation 'b:1.0'
@@ -162,7 +162,7 @@ final class SorterSpec extends Specification {
               // Here's a multi-line comment
               // Here's the second line of the comment
               implementation deps.foo
-              
+
               testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
                 because "life's too short not to"
               }
@@ -251,39 +251,39 @@ final class SorterSpec extends Specification {
       '''\
           import foo
           import static bar;
-    
+
           plugins {
             id 'foo'
           }
-          
+
           repositories {
             google()
             mavenCentral()
           }
-          
+
           apply plugin: 'bar'
           ext.magic = 42
-          
+
           android {
             whatever
           }
-          
+
           dependencies {
             api project(":marvin")
             api 'zzz:yyy:1.0'
-            
+
             implementation project(':milliways')
             implementation 'a:1.0'
             implementation 'b:1.0'
             implementation 'heart:of-gold:1.0'
             implementation deps.bar
             implementation deps.foo
-            
+
             testImplementation("pan-galactic:gargle-blaster:2.0-SNAPSHOT") {
               because "life's too short not to"
             }
           }
-          
+
           println 'hello, world'
         '''.stripIndent())
     def sorter = Sorter.sorterFor(buildScript)
@@ -386,7 +386,7 @@ final class SorterSpec extends Specification {
           dependencies {
             api(projects.bar)
             api(projects.foo)
-            
+
             implementation(projects.bar)
             implementation(projects.foo)
           }
@@ -474,6 +474,116 @@ final class SorterSpec extends Specification {
             implementation(projects.foo)
           }
         '''.stripIndent())).inOrder()
+  }
+
+  // https://github.com/square/gradle-dependencies-sorter/issues/59
+  def "can sort multiple semantically different dependencies blocks"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+      """\
+      import app.cash.redwood.buildsupport.FlexboxHelpers
+
+      apply plugin: 'com.android.library'
+      apply plugin: 'org.jetbrains.kotlin.multiplatform'
+      apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+      apply plugin: 'app.cash.paparazzi'
+      apply plugin: 'com.vanniktech.maven.publish'
+      apply plugin: 'org.jetbrains.dokka' // Must be applied here for publish plugin.
+      apply plugin: 'app.cash.redwood.build.compose'
+
+      kotlin {
+        android {
+          publishLibraryVariants('release')
+        }
+
+        iosArm64()
+        iosX64()
+        iosSimulatorArm64()
+
+        jvm()
+
+        macosArm64()
+        macosX64()
+
+        sourceSets {
+          commonMain {
+            kotlin.srcDir(FlexboxHelpers.get(tasks, 'app.cash.redwood.layout.composeui').get())
+            dependencies {
+              api projects.redwoodLayoutWidget
+              implementation projects.redwoodFlexbox
+              implementation projects.redwoodWidgetCompose
+              implementation libs.jetbrains.compose.foundation
+            }
+          }
+
+          androidUnitTest {
+            dependencies {
+              implementation projects.redwoodLayoutSharedTest
+            }
+          }
+        }
+      }
+
+      android {
+        namespace 'app.cash.redwood.layout.composeui'
+      }""".stripIndent()
+    )
+
+    when:
+    def newScript = Sorter.sorterFor(buildScript).rewritten()
+
+    then:
+    assertThat(newScript).isEqualTo(
+      """\
+      import app.cash.redwood.buildsupport.FlexboxHelpers
+
+      apply plugin: 'com.android.library'
+      apply plugin: 'org.jetbrains.kotlin.multiplatform'
+      apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+      apply plugin: 'app.cash.paparazzi'
+      apply plugin: 'com.vanniktech.maven.publish'
+      apply plugin: 'org.jetbrains.dokka' // Must be applied here for publish plugin.
+      apply plugin: 'app.cash.redwood.build.compose'
+
+      kotlin {
+        android {
+          publishLibraryVariants('release')
+        }
+
+        iosArm64()
+        iosX64()
+        iosSimulatorArm64()
+
+        jvm()
+
+        macosArm64()
+        macosX64()
+
+        sourceSets {
+          commonMain {
+            kotlin.srcDir(FlexboxHelpers.get(tasks, 'app.cash.redwood.layout.composeui').get())
+            dependencies {
+              api projects.redwoodLayoutWidget
+
+              implementation libs.jetbrains.compose.foundation
+              implementation projects.redwoodFlexbox
+              implementation projects.redwoodWidgetCompose
+      }
+          }
+
+          androidUnitTest {
+            dependencies {
+              implementation projects.redwoodLayoutSharedTest
+      }
+          }
+        }
+      }
+
+      android {
+        namespace 'app.cash.redwood.layout.composeui'
+      }""".stripIndent()
+    )
   }
 
   private static List<String> trimmedLinesOf(CharSequence content) {
