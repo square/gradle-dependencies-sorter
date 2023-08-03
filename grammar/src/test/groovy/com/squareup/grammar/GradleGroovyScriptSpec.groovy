@@ -450,6 +450,74 @@ final class GradleGroovyScriptSpec extends Specification {
     )
   }
 
+  // https://github.com/square/gradle-dependencies-sorter/issues/59
+  def "can parse multiple dependencies blocks"() {
+    given:
+    def sourceFile = dir.resolve('build.gradle')
+    Files.writeString(
+      sourceFile,
+      """\
+      import app.cash.redwood.buildsupport.FlexboxHelpers
+
+      apply plugin: 'com.android.library'
+      apply plugin: 'org.jetbrains.kotlin.multiplatform'
+      apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+      apply plugin: 'app.cash.paparazzi'
+      apply plugin: 'com.vanniktech.maven.publish'
+      apply plugin: 'org.jetbrains.dokka' // Must be applied here for publish plugin.
+      apply plugin: 'app.cash.redwood.build.compose'
+
+      kotlin {
+        android {
+          publishLibraryVariants('release')
+        }
+
+        iosArm64()
+        iosX64()
+        iosSimulatorArm64()
+
+        jvm()
+
+        macosArm64()
+        macosX64()
+
+        sourceSets {
+          commonMain {
+            kotlin.srcDir(FlexboxHelpers.get(tasks, 'app.cash.redwood.layout.composeui').get())
+            dependencies {
+              api projects.redwoodLayoutWidget
+              implementation projects.redwoodFlexbox
+              implementation projects.redwoodWidgetCompose
+              implementation libs.jetbrains.compose.foundation
+            }
+          }
+
+          androidUnitTest {
+            dependencies {
+              implementation projects.redwoodLayoutSharedTest
+            }
+          }
+        }
+      }
+
+      android {
+        namespace 'app.cash.redwood.layout.composeui'
+      }""".stripIndent()
+    )
+
+    when:
+    def list = parseGroovyGradleScript(sourceFile)
+
+    then:
+    assertThat(list).containsExactly(
+      'projects.redwoodLayoutWidget',
+      'projects.redwoodFlexbox',
+      'projects.redwoodWidgetCompose',
+      'libs.jetbrains.compose.foundation',
+      'projects.redwoodLayoutSharedTest',
+    )
+  }
+
   private static parseGroovyGradleScript(Path file) {
     def input = Files.newInputStream(file, StandardOpenOption.READ).withCloseable {
       CharStreams.fromStream(it)
