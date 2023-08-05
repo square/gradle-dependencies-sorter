@@ -27,6 +27,5 @@ gradleEnterprise {
 }
 
 include ':app'
-include ':grammar'
 include ':sort'
 include ':sort-dependencies-gradle-plugin'
