@@ -1,6 +1,6 @@
 package com.squareup.sort
 
-import com.squareup.grammar.GradleGroovyScript.QuoteContext
+import com.autonomousapps.grammar.gradle.GradleScript.QuoteContext
 
 internal class DependencyComparator : Comparator<DependencyDeclaration> {
 
@@ -69,12 +69,13 @@ internal class DependencyComparator : Comparator<DependencyDeclaration> {
 
   private fun DependencyDeclaration.comparisonText(): String {
     val text = when {
-      isProjectDependency() -> with (dependency.projectDependency()) {
+      isProjectDependency() -> with(dependency.projectDependency()) {
         // If project(path: 'foo') syntax is used, take the path value.
         // Else, if project('foo') syntax is used, take the ID.
         projectMapEntry().firstOrNull { it.key.text == "path:" }?.value?.text
           ?: ID().text
       }
+
       isFileDependency() -> dependency.fileDependency().ID().text
       else -> dependency.externalDependency().ID().text
     }

@@ -1,6 +1,5 @@
 package com.squareup.sort
 
-
 import spock.lang.Specification
 import spock.lang.TempDir
 

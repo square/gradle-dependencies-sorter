@@ -7,7 +7,7 @@ kotlin {
 }
 
 dependencies {
-  api project(':grammar')
+  api libs.grammar
 
   testImplementation libs.spock
 }

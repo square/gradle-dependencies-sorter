@@ -2,7 +2,6 @@ package com.squareup
 
 import com.squareup.sort.BuildDotGradleFinder
 import com.squareup.sort.SortCommand
-import org.slf4j.LoggerFactory
 import picocli.CommandLine
 import spock.lang.Specification
 
