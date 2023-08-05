@@ -1,12 +1,12 @@
 package com.squareup.sort
 
-import com.squareup.grammar.GradleGroovyScript
-import com.squareup.grammar.GradleGroovyScript.DependenciesContext
-import com.squareup.grammar.GradleGroovyScript.NormalDeclarationContext
-import com.squareup.grammar.GradleGroovyScript.PlatformDeclarationContext
-import com.squareup.grammar.GradleGroovyScript.TestFixturesDeclarationContext
-import com.squareup.grammar.GradleGroovyScriptBaseListener
-import com.squareup.grammar.GradleGroovyScriptLexer
+import com.autonomousapps.grammar.gradle.GradleScript
+import com.autonomousapps.grammar.gradle.GradleScript.DependenciesContext
+import com.autonomousapps.grammar.gradle.GradleScript.NormalDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScript.PlatformDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScript.TestFixturesDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScriptBaseListener
+import com.autonomousapps.grammar.gradle.GradleScriptLexer
 import com.squareup.parse.AbstractErrorListener
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
@@ -27,7 +27,7 @@ public class Sorter private constructor(
   private val rewriter: TokenStreamRewriter,
   private val errorListener: RewriterErrorListener,
   private val filePath: String,
-) : GradleGroovyScriptBaseListener() {
+) : GradleScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
   private var smartIndentSet = false
@@ -54,7 +54,7 @@ public class Sorter private constructor(
   private fun setIndent(ctx: ParserRuleContext) {
     if (smartIndentSet) return
 
-    tokens.getHiddenTokensToLeft(ctx.start.tokenIndex, GradleGroovyScriptLexer.WHITESPACE)
+    tokens.getHiddenTokensToLeft(ctx.start.tokenIndex, GradleScriptLexer.WHITESPACE)
       ?.firstOrNull()?.text?.replace("\n", "")?.let {
         smartIndentSet = true
         indent = it
@@ -93,11 +93,11 @@ public class Sorter private constructor(
     }
   }
 
-  override fun enterBuildscript(ctx: GradleGroovyScript.BuildscriptContext?) {
+  override fun enterBuildscript(ctx: GradleScript.BuildscriptContext?) {
     isInBuildScriptBlock = true
   }
 
-  override fun exitBuildscript(ctx: GradleGroovyScript.BuildscriptContext?) {
+  override fun exitBuildscript(ctx: GradleScript.BuildscriptContext?) {
     isInBuildScriptBlock = false
   }
 
@@ -158,7 +158,7 @@ public class Sorter private constructor(
 
   private fun precedingComment(dependency: DependencyDeclaration) = tokens.getHiddenTokensToLeft(
     dependency.declaration.start.tokenIndex,
-    GradleGroovyScriptLexer.COMMENTS
+    GradleScriptLexer.COMMENTS
   )?.joinToString(separator = "") {
     "$indent${it.text}"
   }?.trimEnd()
@@ -169,9 +169,9 @@ public class Sorter private constructor(
       val input = Files.newInputStream(file, StandardOpenOption.READ).use {
         CharStreams.fromStream(it)
       }
-      val lexer = GradleGroovyScriptLexer(input)
+      val lexer = GradleScriptLexer(input)
       val tokens = CommonTokenStream(lexer)
-      val parser = GradleGroovyScript(tokens)
+      val parser = GradleScript(tokens)
 
       // Remove default error listeners to prevent insane console output
       lexer.removeErrorListeners()

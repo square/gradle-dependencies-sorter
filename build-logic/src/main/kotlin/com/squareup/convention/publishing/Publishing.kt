@@ -123,7 +123,7 @@ internal object Publishing {
     scm {
       it.connection.set("scm:git:git://github.com/square/gradle-dependencies-sorter.git")
       it.developerConnection.set("scm:git:ssh://github.com/square/gradle-dependencies-sorter.git")
-      it.url.set("https://https://github.com/square/gradle-dependencies-sorter")
+      it.url.set("https://github.com/square/gradle-dependencies-sorter")
     }
   }
 }

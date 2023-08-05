@@ -1,9 +1,9 @@
 package com.squareup.sort
 
-import com.squareup.grammar.GradleGroovyScript.DependencyContext
-import com.squareup.grammar.GradleGroovyScript.NormalDeclarationContext
-import com.squareup.grammar.GradleGroovyScript.PlatformDeclarationContext
-import com.squareup.grammar.GradleGroovyScript.TestFixturesDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScript.DependencyContext
+import com.autonomousapps.grammar.gradle.GradleScript.NormalDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScript.PlatformDeclarationContext
+import com.autonomousapps.grammar.gradle.GradleScript.TestFixturesDeclarationContext
 import org.antlr.v4.runtime.ParserRuleContext
 
 /**
