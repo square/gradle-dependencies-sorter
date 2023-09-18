@@ -3,6 +3,8 @@ package com.squareup.sort
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Property
@@ -11,12 +13,16 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.process.ExecOperations
 import javax.inject.Inject
 
 abstract class SortDependenciesTask @Inject constructor(
+  private val fileOps: FileSystemOperations,
   private val execOps: ExecOperations
 ) : DefaultTask() {
 
@@ -45,6 +51,19 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:Input
   abstract val verbose: Property<Boolean>
 
+
+
+
+  @get:OutputDirectory
+  abstract val tempDir: DirectoryProperty
+
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  @get:InputFiles
+  abstract val input: ConfigurableFileCollection
+
+  @get:OutputDirectory
+  abstract val output: DirectoryProperty
+
   @TaskAction
   fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
@@ -56,6 +75,22 @@ abstract class SortDependenciesTask @Inject constructor(
     }
 
     logger.quiet("Sorting '$buildScript' using mode '$mode'.")
+
+
+    // https://docs.gradle.org/current/userguide/custom_gradle_types.html#service_injection
+    // https://docs.gradle.org/current/javadoc/org/gradle/api/file/CopySpec.html
+    fileOps.copy { copySpec ->
+      copySpec.include {
+        //
+      }
+      copySpec.into(tempDir.get().asFile)
+    }
+
+    // https://docs.gradle.org/current/javadoc/org/gradle/process/ExecOperations.html
+    execOps.exec { exec ->
+      // $ foo bar baz
+      exec.commandLine = "foo bar baz".split(" ")
+    }
 
     execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {

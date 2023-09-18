@@ -45,5 +45,13 @@ class SortDependenciesPlugin : Plugin<Project> {
     buildScript.set(project.buildFile)
     sortProgram.setFrom(sortApp)
     this.mode.set(mode)
+
+
+
+    tempDir.setFrom(project.layout.buildDirectory.dir("my-temp-files"))
+    // implementation "foo"
+    input.setFrom(project.configurations.getAt("implementation"))
+    // $projectRoot/build/foo/bar/baz
+    output.set(project.layout.buildDirectory.dir("foo/bar/baz"))
   }
 }
