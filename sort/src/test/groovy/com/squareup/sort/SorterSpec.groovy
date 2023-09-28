@@ -476,6 +476,49 @@ final class SorterSpec extends Specification {
         '''.stripIndent())).inOrder()
   }
 
+  def "can sort dependencies with artifact type specified"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          implementation projects.foo.internal
+          implementation projects.bar.public
+          implementation (libs.baz.ui) {
+            artifact {
+              type = "aar"
+            }
+          }
+          implementation libs.androidx.constraintLayout
+          implementation libs.common.view
+          implementation projects.core
+        }
+      '''.stripIndent())
+    when:
+    def newScript = Sorter.sorterFor(buildScript).rewritten()
+
+    then:
+    notThrown(BuildScriptParseException)
+
+    and:
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+        dependencies {
+          implementation libs.androidx.constraintLayout
+          implementation (libs.baz.ui) {
+            artifact {
+              type = "aar"
+            }
+          }
+          implementation libs.common.view
+          implementation projects.bar.public
+          implementation projects.core
+          implementation projects.foo.internal
+        }
+      '''.stripIndent()
+    )).inOrder()
+  }
+
   // https://github.com/square/gradle-dependencies-sorter/issues/59
   def "can sort multiple semantically different dependencies blocks"() {
     given:
