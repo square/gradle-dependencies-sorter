@@ -11,7 +11,7 @@ shadow = "8.1.0"
 [libraries]
 antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
 antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
-grammar = "com.autonomousapps:gradle-script-grammar:0.1"
+grammar = "com.autonomousapps:gradle-script-grammar:0.3"
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
