@@ -122,6 +122,74 @@ final class FunctionalSpec extends Specification {
     result.output.contains('1 scripts are not ordered correctly.')
   }
 
+  def "doesn't fail on empty build script"() {
+    given: 'A project with an empty subproject build script'
+    def settingsScript = dir.resolve('settings.gradle.kts')
+    Files.writeString(settingsScript,
+      """\
+        dependencyResolutionManagement {
+          repositories {
+            mavenCentral()
+            maven { url = uri("$REPO") }
+          }
+        }
+
+        include(":sub")""".stripIndent()
+    )
+    def rootBuildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(rootBuildScript,
+      '''\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      subprojects {
+        apply(plugin = "com.squareup.sort-dependencies")
+      }'''.stripIndent()
+    )
+    def subproject = dir.resolve('sub/build.gradle.kts')
+    Files.createDirectories(subproject.parent)
+    Files.createFile(subproject)
+
+    expect: 'We sort dependencies'
+    build(dir, 'sortDependencies', '--verbose')
+  }
+
+  def "doesn't fail on non-existent build script"() {
+    given: 'A project with an intermediate directory that is technically a project'
+    def settingsScript = dir.resolve('settings.gradle.kts')
+    Files.writeString(settingsScript,
+      """\
+        dependencyResolutionManagement {
+          repositories {
+            mavenCentral()
+            maven { url = uri("$REPO") }
+          }
+        }
+
+        include(":sub:project")""".stripIndent()
+    )
+    def rootBuildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(rootBuildScript,
+      '''\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      subprojects {
+        apply(plugin = "com.squareup.sort-dependencies")
+      }'''.stripIndent()
+    )
+    def subproject = dir.resolve('sub/project/build.gradle.kts')
+    Files.createDirectories(subproject.parent)
+    Files.createFile(subproject)
+
+    expect: 'We sort dependencies'
+    build(dir, 'sortDependencies', '--verbose')
+  }
+
   private static final BUILD_SCRIPT = """\
     plugins {
       id 'java-library'

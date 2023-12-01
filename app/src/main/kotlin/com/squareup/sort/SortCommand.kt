@@ -100,8 +100,8 @@ class SortCommand(
     val findFileTime = System.currentTimeMillis()
 
     if (filesToSort.isEmpty()) {
-      logger.error("No build.gradle(.kts) scripts found.")
-      return NO_BUILD_SCRIPTS_FOUND.value
+      logger.warn("No build.gradle(.kts) scripts found.")
+      return SUCCESS.value
     } else {
       logger.info(
         "It took ${findFileTime - start} ms to find ${filesToSort.size} build scripts."
