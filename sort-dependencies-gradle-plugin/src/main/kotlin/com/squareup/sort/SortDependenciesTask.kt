@@ -41,6 +41,11 @@ abstract class SortDependenciesTask @Inject constructor(
   abstract val mode: Property<String>
 
   @get:Optional
+  @get:Option(option = "strict", description = "Enables strict mode, which will cause this task to fail if there is an error parsing or sorting the dependencies. Default is false.")
+  @get:Input
+  abstract val strict: Property<Boolean>
+
+  @get:Optional
   @get:Option(option = "verbose", description = "Enables verbose logging.")
   @get:Input
   abstract val verbose: Property<Boolean>
@@ -50,6 +55,7 @@ abstract class SortDependenciesTask @Inject constructor(
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
     val verbose = verbose.getOrElse(false)
+    val strict = strict.getOrElse(false)
 
     if (mode != "check" && mode != "sort") {
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
@@ -68,6 +74,7 @@ abstract class SortDependenciesTask @Inject constructor(
           "--verbose",
           verbose.toString()
         )
+        isIgnoreExitValue = !strict
       }
     }
   }
