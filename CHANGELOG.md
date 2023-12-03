@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.5
+* [New] Warn (not fail) when encountering projects without a build script.
+
 ## Version 0.4
 * New: Adds extension to permit setting custom program version.
 * Fix: Change resource name to avoid clobbering with other plugins.
