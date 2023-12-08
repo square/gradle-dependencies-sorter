@@ -30,9 +30,14 @@ class SortDependenciesPlugin : Plugin<Project> {
       t.configure("check", target, sortApp)
     }
 
-    pluginManager.withPlugin("lifecycle-base") {
-      tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
-        it.dependsOn(checkTask)
+    afterEvaluate {
+      val shouldCheck = extension.check.get()
+      if (shouldCheck) {
+        pluginManager.withPlugin("lifecycle-base") {
+          tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
+            it.dependsOn(checkTask)
+          }
+        }
       }
     }
   }
