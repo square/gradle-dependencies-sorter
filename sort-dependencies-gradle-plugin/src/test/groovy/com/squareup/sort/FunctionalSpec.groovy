@@ -1,11 +1,13 @@
 package com.squareup.sort
 
+import org.gradle.testkit.runner.TaskOutcome
 import spock.lang.Specification
 import spock.lang.TempDir
 
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 import static com.squareup.test.Runner.build
 import static com.squareup.test.Runner.buildAndFail
@@ -115,11 +117,43 @@ final class FunctionalSpec extends Specification {
     def buildScript = dir.resolve('build.gradle')
     Files.writeString(buildScript, BUILD_SCRIPT)
 
-    when: 'We sort dependencies'
+    when: 'We check dependencies are sorted'
     def result = buildAndFail(dir, 'checkSortDependencies', '--verbose')
 
     then: 'Dependencies are not sorted'
     result.output.contains('1 scripts are not ordered correctly.')
+  }
+
+  def "checks sort order when executing 'check' task"() {
+    given: 'A build script with unsorted dependencies'
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript, BUILD_SCRIPT)
+
+    when: 'We run check task'
+    def result = buildAndFail(dir, 'check')
+
+    then: 'Task ran and failed'
+    result.task(':checkSortDependencies').outcome == TaskOutcome.FAILED
+  }
+
+  def "doesn't check sort order when executing 'check' task when check is disabled"() {
+    given: 'A build script with unsorted dependencies'
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript, BUILD_SCRIPT)
+    Files.writeString(buildScript,
+      '''
+        sortDependencies {
+          check false
+        }
+      '''.stripIndent(),
+      StandardOpenOption.APPEND
+    )
+
+    when: 'We run check task'
+    def result = build(dir, 'check')
+
+    then: 'Task did not run'
+    result.task(':checkSortDependencies') == null
   }
 
   def "doesn't fail on empty build script"() {
