@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.6
+* [New] make `check` task dependency optional (but on by default).
+  ```sortDependencies { check(<true|false>) }```
+
 ## Version 0.5
 * [New] Warn (not fail) when encountering projects without a build script.
 
