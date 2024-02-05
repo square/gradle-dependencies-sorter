@@ -66,7 +66,7 @@ abstract class SortDependenciesTask @Inject constructor(
           addAll("--mode", mode)
           if (verbose) {
             add("--verbose")
-          )
+          }
         }
       }
     }
