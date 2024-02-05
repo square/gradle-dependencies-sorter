@@ -22,7 +22,7 @@ class BuildDotGradleFinderTest extends Specification {
         given: 'A BuildDotGradleFinder using the current directory'
         def finder = new BuildDotGradleFinder(
                 /*path = */ dir,
-                /*searchPaths =*/ ['.'],
+                /*searchPaths =*/ [dir],
                 /*skipHiddenAndBuildDirs = */ true,
         )
 
