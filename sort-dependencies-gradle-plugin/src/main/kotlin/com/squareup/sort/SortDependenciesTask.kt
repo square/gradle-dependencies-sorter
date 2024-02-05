@@ -63,7 +63,8 @@ abstract class SortDependenciesTask @Inject constructor(
         classpath = sortProgram
         args = buildList {
           add(buildScript)
-          addAll("--mode", mode)
+          add("--mode")
+          add(mode)
           if (verbose) {
             add("--verbose")
           }
