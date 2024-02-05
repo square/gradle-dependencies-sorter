@@ -1,20 +1,48 @@
 package com.squareup.sort
 
-import java.io.File
-import java.nio.file.Files
+import java.nio.file.FileVisitResult
 import java.nio.file.Path
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.FileVisitorBuilder
+import kotlin.io.path.exists
+import kotlin.io.path.name
 import kotlin.io.path.pathString
+import kotlin.io.path.visitFileTree
 
+@OptIn(ExperimentalPathApi::class)
 class BuildDotGradleFinder(
   private val root: Path,
-  searchPaths: List<String>,
+  searchPaths: List<Path>,
   skipHiddenAndBuildDirs: Boolean,
 ) {
 
-  private val traversalFilter: (File) -> Boolean = if (skipHiddenAndBuildDirs) {
-    { dir -> !dir.name.startsWith(".") && dir.name != "build" }
-  } else {
-    { true }
+  /**
+   * Skips `build` and cache directories (starting with `.`, like `.gradle`) in [walkEachFile].
+   */
+  private fun FileVisitorBuilder.skipBuildAndCacheDirs() {
+    return onPreVisitDirectory { dir, _ ->
+      if (dir.name.startsWith(".") || dir.name == "build") {
+        FileVisitResult.SKIP_SUBTREE
+      } else {
+        FileVisitResult.CONTINUE
+      }
+    }
+  }
+
+  private fun Path.walkEachFile(
+    maxDepth: Int = Int.MAX_VALUE,
+    followLinks: Boolean = false,
+    builderAction: FileVisitorBuilder.() -> Unit = {},
+  ): Sequence<Path> {
+    val files = mutableListOf<Path>()
+    visitFileTree(maxDepth, followLinks) {
+      builderAction()
+      onVisitFile { file, _ ->
+        files.add(file)
+        FileVisitResult.CONTINUE
+      }
+    }
+    return files.asSequence()
   }
 
   val buildDotGradles: Set<Path> = searchPaths.asSequence()
@@ -22,15 +50,17 @@ class BuildDotGradleFinder(
     .map { root.resolve(it).normalize() }
     .flatMap { searchPath ->
       if (searchPath.isBuildDotGradle()) {
-        sequenceOf(searchPath).filter(Files::exists)
+        sequenceOf(searchPath).filter(Path::exists)
       } else {
         // Use File.walk() so we have access to the `onEnter` filter.
         // Can switch to Path.walk() once it's stable and offers the same API.
-        searchPath.toFile().walk()
-          .onEnter(traversalFilter)
-          .map(File::toPath)
+        searchPath.walkEachFile {
+          if (skipHiddenAndBuildDirs) {
+            skipBuildAndCacheDirs()
+          }
+        }
           .filter(Path::isBuildDotGradle)
-          .filter(Files::exists)
+          .filter(Path::exists)
       }
     }
     .toSet()
@@ -38,9 +68,15 @@ class BuildDotGradleFinder(
   interface Factory {
     fun of(
       root: Path,
-      searchPaths: List<String>,
+      searchPaths: List<Path>,
       skipHiddenAndBuildDirs: Boolean,
     ): BuildDotGradleFinder = BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs)
+
+    object Default : Factory {
+      override fun of(root: Path, searchPaths: List<Path>, skipHiddenAndBuildDirs: Boolean): BuildDotGradleFinder {
+        return BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs)
+      }
+    }
   }
 }
 

@@ -1,93 +1,68 @@
 package com.squareup.sort
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.ProgramResult
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.output.MordantHelpFormatter
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.enum
+import com.github.ajalt.clikt.parameters.types.path
 import com.squareup.log.DelegatingLogger
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
-import com.squareup.sort.Status.NO_BUILD_SCRIPTS_FOUND
-import com.squareup.sort.Status.NO_PATH_PASSED
 import com.squareup.sort.Status.PARSE_ERROR
 import com.squareup.sort.Status.SUCCESS
-import com.squareup.sort.Status.UNKNOWN_MODE
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import picocli.CommandLine.Command
-import picocli.CommandLine.HelpCommand
-import picocli.CommandLine.Option
-import picocli.CommandLine.Parameters
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.Callable
 import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
 /**
- * Parent command or entry point into the dependencies-sorter. Not implementing `Callable` nor
- * `Runnable` would indicate that a subcommand _must_ be specified.
- *
- * @see <a href="https://picocli.info/#_required_subcommands">Picocli: Required subcommands</a>
+ * Parent command or entry point into the dependencies-sorter.
  */
-@Command(
-  name = "sort",
-  mixinStandardHelpOptions = true,
-  version = ["0.1"],
-  description = ["Sorts dependencies"],
-  subcommands = [
-    HelpCommand::class
-  ]
-)
 class SortCommand(
   private val fileSystem: FileSystem = FileSystems.getDefault(),
   private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
-) : Callable<Int> {
+) : CliktCommand(
+  name = "sort",
+  help = "Sorts dependencies",
+) {
 
-  @Option(
-    names = ["-v", "--verbose"],
-    description = [
-      "Verbose mode. All logs are printed."
-    ],
-    defaultValue = "false"
-  )
-  var verbose: Boolean = false
-
-  @Option(
-    names = ["--skip-hidden-and-build-dirs"],
-    description = [
-      "Flag to control whether file tree walking looks in build and hidden directories. True by default."
-    ],
-    defaultValue = "true"
-  )
-  var skipHiddenAndBuildDirs: Boolean = true
-
-  @Option(
-    names = ["-m", "--mode"],
-    description = [
-      "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
-    ],
-    defaultValue = "sort"
-  )
-  lateinit var mode: String
-
-  @Parameters(
-    index = "0..*",
-    description = ["Path(s) to sort. Required."],
-  )
-  lateinit var paths: List<String>
-
-  override fun call(): Int {
-    // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
-    return logger(!verbose).use(::callWithLogger)
+  init {
+    context { helpFormatter = { context -> MordantHelpFormatter(context = context, showDefaultValues = true, showRequiredTag = true) } }
   }
 
-  private fun callWithLogger(logger: DelegatingLogger): Int {
-    if (!this::paths.isInitialized) {
-      logger.error("No paths were passed. See 'help' for usage information.")
-      return NO_PATH_PASSED.value
-    }
+  private val verbose by option("-v", "--verbose", help = "Verbose mode. All logs are printed.")
+    .flag("--quiet", default = false)
 
+  private val skipHiddenAndBuildDirs by option(
+    "--skip-hidden-and-build-dirs",
+    help = "Flag to control whether file tree walking looks in build and hidden directories. True by default.",
+  ).flag("--no-skip-hidden-and-build-dirs", default = true)
+
+  val mode by option("-m", "--mode", help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted")
+    .enum<Mode>().default(Mode.SORT)
+
+  val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
+    .path(mustExist = false, canBeDir = true, canBeFile = true)
+    .multiple(required = true)
+
+  override fun run() {
+    // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
+    logger(!verbose).use(::callWithLogger)
+  }
+
+  private fun callWithLogger(logger: DelegatingLogger) {
     val pwd = fileSystem.getPath(".").toAbsolutePath().normalize()
     logger.info("Sorting build.gradle(.kts) scripts in the following paths: ${paths.joinToString()}")
 
@@ -101,7 +76,7 @@ class SortCommand(
 
     if (filesToSort.isEmpty()) {
       logger.warn("No build.gradle(.kts) scripts found.")
-      return SUCCESS.value
+      throw ProgramResult(SUCCESS.value)
     } else {
       logger.info(
         "It took ${findFileTime - start} ms to find ${filesToSort.size} build scripts."
@@ -109,12 +84,11 @@ class SortCommand(
     }
 
     val status = when (mode) {
-      "sort" -> sort(filesToSort, findFileTime, logger)
-      "check" -> check(filesToSort, findFileTime, pwd, logger)
-      else -> UNKNOWN_MODE
+      Mode.SORT -> sort(filesToSort, findFileTime, logger)
+      Mode.CHECK -> check(filesToSort, findFileTime, pwd, logger)
     }
 
-    return status.value
+    throw ProgramResult(status.value)
   }
 
   private fun sort(
@@ -232,13 +206,16 @@ class SortCommand(
   }
 }
 
+enum class Mode {
+  SORT,
+  CHECK,
+}
+
 enum class Status(val value: Int) {
   SUCCESS(0),
-  NO_PATH_PASSED(1),
-  NO_BUILD_SCRIPTS_FOUND(2),
-  NOT_SORTED(3),
-  UNKNOWN_MODE(4),
-  PARSE_ERROR(5),
+  NO_BUILD_SCRIPTS_FOUND(1),
+  NOT_SORTED(2),
+  PARSE_ERROR(3),
   ;
 }
 
