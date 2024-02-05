@@ -11,12 +11,12 @@ shadow = "8.1.0"
 [libraries]
 antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
 antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
+clikt = "com.github.ajalt.clikt:clikt:4.2.2"
 grammar = "com.autonomousapps:gradle-script-grammar:0.3"
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
-picocli = "info.picocli:picocli:4.6.2"
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
 shadow-gradle-plugin = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
