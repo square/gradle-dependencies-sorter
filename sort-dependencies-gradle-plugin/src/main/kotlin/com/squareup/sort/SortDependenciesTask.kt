@@ -61,13 +61,13 @@ abstract class SortDependenciesTask @Inject constructor(
       with(javaExecSpec) {
         mainClass.set("com.squareup.sort.MainKt")
         classpath = sortProgram
-        args = listOf(
-          buildScript,
-          "--mode",
-          mode,
-          "--verbose",
-          verbose.toString()
-        )
+        args = buildList {
+          add(buildScript)
+          addAll("--mode", mode)
+          if (verbose) {
+            add("--verbose")
+          )
+        }
       }
     }
   }
