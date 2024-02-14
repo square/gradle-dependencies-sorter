@@ -10,8 +10,8 @@ class ResourceVersionProvider : IVersionProvider {
 
   private fun getVersionFromResource(): String {
     val url = javaClass.getResource("/appinfo.properties")
-    val properties = Properties()
     return if (url != null) {
+      val properties = Properties()
       properties.load(url.openStream())
       properties.getProperty("app.version")
     } else {
