@@ -33,7 +33,7 @@ import kotlin.io.path.writeText
 @Command(
   name = "sort",
   mixinStandardHelpOptions = true,
-  version = ["0.1"],
+  versionProvider = ResourceVersionProvider::class,
   description = ["Sorts dependencies"],
   subcommands = [
     HelpCommand::class
