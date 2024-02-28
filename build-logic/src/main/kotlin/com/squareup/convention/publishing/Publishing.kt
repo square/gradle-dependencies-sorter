@@ -15,6 +15,7 @@ internal object Publishing {
 
   fun setup(project: Project): Unit = project.run {
     val isSnapshot = version.toString().endsWith("SNAPSHOT")
+    val isRelease = !isSnapshot
     val publishing = extensions.getByType(PublishingExtension::class.java)
     val signing = extensions.getByType(SigningExtension::class.java)
     val credentials = Credentials(this)
@@ -38,7 +39,18 @@ internal object Publishing {
 
     afterEvaluate {
       publishing.publications.all { pub ->
+        // https://github.com/vanniktech/gradle-maven-publish-plugin/blob/462c3b13579929a1ca92343099659866f8081600/plugin/src/main/kotlin/com/vanniktech/maven/publish/MavenPublishBaseExtension.kt#L141C42-L147
+        val key = providers.gradleProperty("signingInMemoryKey").orNull
+        if (key != null) {
+          val keyId = providers.gradleProperty("signingInMemoryKeyId").orNull
+          val pw = providers.gradleProperty("signingInMemoryKeyPassword").getOrElse("")
+          signing.useInMemoryPgpKeys(keyId, key, pw)
+        }
+
         signing.sign(pub)
+
+        signing.isRequired = isRelease && gradle.taskGraph.allTasks.any { it is PublishToMavenRepository }
+
         if (pub is MavenPublication) {
           setupPom(pub.pom)
         }
