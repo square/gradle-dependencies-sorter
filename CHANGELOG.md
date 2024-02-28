@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.7
+* [Fix] Fix verbose flag in SortDependenciesTask.
+* [Chore] Switch to Clikt CLI.
+
 ## Version 0.6
 * [New] make `check` task dependency optional (but on by default).
   ```sortDependencies { check(<true|false>) }```
