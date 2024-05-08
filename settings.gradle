@@ -3,7 +3,7 @@ pluginManagement {
 }
 
 plugins {
-  id 'com.gradle.enterprise' version '3.11.2'
+  id 'com.gradle.develocity' version '3.17.1'
   id 'me.champeau.includegit' version '0.1.6'
 }
 
@@ -36,11 +36,10 @@ boolean grammarAsSource() {
 
 rootProject.name = 'gradle-dependencies-sorter'
 
-gradleEnterprise {
+develocity {
   buildScan {
-    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-    termsOfServiceAgree = 'yes'
-    publishAlways()
+    termsOfUseUrl = 'https://gradle.com/terms-of-service'
+    termsOfUseAgree = 'yes'
   }
 }
 
