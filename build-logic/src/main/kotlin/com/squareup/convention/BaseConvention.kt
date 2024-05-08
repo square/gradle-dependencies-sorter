@@ -14,8 +14,6 @@ class BaseConvention : Plugin<Project> {
     with(pluginManager) {
       apply("org.jetbrains.kotlin.jvm")
       apply("groovy")
-//      apply("maven-publish")
-//      apply("org.gradle.signing")
     }
 
     // These are set in the base project's gradle.properties
