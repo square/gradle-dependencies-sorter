@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   id 'com.squareup.app'
+  alias(libs.plugins.mavenPublish)
 }
 
 application {
@@ -53,10 +54,6 @@ publishing {
     distZip(MavenPublication) {
       artifactId = 'sort-gradle-dependencies-dist'
       artifact shadowDistZip
-    }
-    app(MavenPublication) {
-      artifactId = 'sort-gradle-dependencies-app'
-      from components['java']
     }
   }
   repositories {

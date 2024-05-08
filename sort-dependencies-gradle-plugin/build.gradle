@@ -1,5 +1,7 @@
 plugins {
   id 'com.squareup.plugin'
+  alias(libs.plugins.dokka)
+  alias(libs.plugins.mavenPublish)
 }
 
 gradlePlugin {
@@ -29,4 +31,8 @@ tasks.named('processResources') {
 
   from 'com-squareup-sort-version.txt'
   expand(version: version)
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+  dependsOn(tasks.named { it == "dokkaJavadocJar" })
 }

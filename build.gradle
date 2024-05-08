@@ -2,4 +2,7 @@ plugins {
   // This plugin should be loaded in a single classloader.
   alias(libs.plugins.kotlin.jvm) apply false
   alias(libs.plugins.dagp)
+  // Also single classloader so it can create a staging repo task
+  alias(libs.plugins.dokka) apply false
+  alias(libs.plugins.mavenPublish) apply false
 }
