@@ -41,3 +41,6 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ARTIFACT_SIGNING_PRIVATE_KEY }}
+          # TODO from the square side
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.TODO }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.TODO }}
