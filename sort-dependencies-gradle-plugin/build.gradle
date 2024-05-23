@@ -19,7 +19,7 @@ dependencies {
 
 tasks.named('test') {
   // We need to publish the app to a local repo for use by the tests, and then clean that up afterwards.
-  dependsOn ':app:publishAppPublicationToTestsRepository'
+  dependsOn ':app:publishAllPublicationsToTestsRepository'
   finalizedBy ':app:cleanTestRepo'
   inputs.property('version', version)
 
