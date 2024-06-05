@@ -16,11 +16,5 @@ class LibConvention : Plugin<Project> {
 
   override fun apply(target: Project): Unit = target.run {
     pluginManager.apply(BaseConvention::class.java)
-
-    extensions.configure(JavaPluginExtension::class.java) { j ->
-      // We specifically don't want either of these artifacts on the app project
-      j.withJavadocJar()
-      j.withSourcesJar()
-    }
   }
 }

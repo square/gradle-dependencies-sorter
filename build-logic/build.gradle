@@ -23,6 +23,7 @@ gradlePlugin {
 dependencies {
   implementation libs.kotlin.gradle.plugin
   implementation libs.shadow.gradle.plugin
+  implementation libs.maven.publish.plugin
 
   implementation(libs.okhttp3) {
     because('Closing and releasing Sonatype Nexus staging repo')

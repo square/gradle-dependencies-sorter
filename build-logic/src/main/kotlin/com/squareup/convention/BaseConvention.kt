@@ -14,13 +14,11 @@ class BaseConvention : Plugin<Project> {
     with(pluginManager) {
       apply("org.jetbrains.kotlin.jvm")
       apply("groovy")
-      apply("maven-publish")
-      apply("org.gradle.signing")
     }
 
     // These are set in the base project's gradle.properties
     group = providers.gradleProperty("GROUP").get()
-    version = providers.gradleProperty("VERSION").get()
+    version = providers.gradleProperty("VERSION_NAME").get()
 
     val versionCatalog = extensions.getByType(VersionCatalogsExtension::class.java).named("libs")
     val javaVersion = versionCatalog.findVersion("java").orElseThrow().requiredVersion
