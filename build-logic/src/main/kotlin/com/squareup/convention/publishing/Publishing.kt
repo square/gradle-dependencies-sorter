@@ -4,7 +4,6 @@ import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.MavenPom
 
-@Suppress("UnstableApiUsage")
 internal object Publishing {
 
   fun setup(project: Project): Unit = project.run {
