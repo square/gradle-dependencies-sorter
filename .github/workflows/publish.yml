@@ -36,7 +36,7 @@ jobs:
       - name: Publish artifacts
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishAllPublicationsToMavenCentralRepository --no-configuration-cache
+          arguments: publishAllPublicationsToMavenCentralRepository -x :app:publishDistZipPublicationToMavenCentralRepository --no-configuration-cache
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
