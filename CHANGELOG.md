@@ -3,6 +3,7 @@
 ## Version 0.7
 * [Fix] Fix verbose flag in SortDependenciesTask.
 * [Chore] Switch to Clikt CLI.
+* [Build] Switched to `com.vanniktech:gradle-maven-publish-plugin` for publishing.
 
 ## Version 0.6
 * [New] make `check` task dependency optional (but on by default).
