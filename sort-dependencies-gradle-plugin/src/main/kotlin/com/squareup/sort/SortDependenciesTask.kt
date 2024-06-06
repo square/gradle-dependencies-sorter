@@ -55,7 +55,7 @@ abstract class SortDependenciesTask @Inject constructor(
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
     }
 
-    logger.quiet("Sorting '$buildScript' using mode '$mode'.")
+    logger.info("Sorting '$buildScript' using mode '$mode'.")
 
     execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {
