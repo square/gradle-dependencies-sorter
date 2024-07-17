@@ -22,10 +22,11 @@ internal object ConfigurationComparator :
         "runtimeOnly" to { Configuration("runtimeOnly", 4) },
         "annotationProcessor" to { Configuration("annotationProcessor", 5) },
         "kapt" to { Configuration("kapt", 6) },
-        "testImplementation" to { Configuration("testImplementation", 7) },
-        "testCompileOnly" to { Configuration("testCompileOnly", 8) },
-        "testRuntimeOnly" to { Configuration("testRuntimeOnly", 9) },
-        "androidTestImplementation" to { Configuration("androidTestImplementation", 10) },
+        "ksp" to { Configuration("ksp", 7) },
+        "testImplementation" to { Configuration("testImplementation", 8) },
+        "testCompileOnly" to { Configuration("testCompileOnly", 9) },
+        "testRuntimeOnly" to { Configuration("testRuntimeOnly", 10) },
+        "androidTestImplementation" to { Configuration("androidTestImplementation", 11) },
       )
 
       fun of(configuration: String): Configuration? {
