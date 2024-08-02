@@ -28,6 +28,14 @@ abstract class SortDependenciesExtension @Inject constructor(
         ?: error("Can't find '$VERSION_FILENAME'")
     )
 
+  /**
+   * When true, a blank line will be inserted between dependencies of different configurations
+   * (`api`, `implementation`, etc.). Enabled by default.
+   */
+  val insertBlankLines: Property<Boolean> = objects
+    .property(Boolean::class.java)
+    .convention(true)
+
   internal val check: Property<Boolean> = objects.property(Boolean::class.java).convention(true)
 
   fun check(shouldCheck: Boolean) {

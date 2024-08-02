@@ -27,6 +27,7 @@ public class Sorter private constructor(
   private val rewriter: TokenStreamRewriter,
   private val errorListener: RewriterErrorListener,
   private val filePath: String,
+  private val insertBlankLines: Boolean,
 ) : GradleScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
@@ -130,7 +131,9 @@ public class Sorter private constructor(
     appendLine("dependencies {")
     dependenciesByConfiguration.entries.sortedWith(ConfigurationComparator)
       .forEachIndexed { i, entry ->
-        if (i != 0) appendLine()
+        // Place a blank line between chunks of the same configuration, if configured
+        if (i != 0 && insertBlankLines) appendLine()
+
         entry.value.sortedWith(dependencyComparator)
           .map { dependency ->
             dependency to Texts(
@@ -165,7 +168,10 @@ public class Sorter private constructor(
 
   public companion object {
     @JvmStatic
-    public fun sorterFor(file: Path): Sorter {
+    public fun sorterFor(file: Path): Sorter = sorterFor(file, insertBlankLines = true)
+
+    @JvmStatic
+    public fun sorterFor(file: Path, insertBlankLines: Boolean): Sorter {
       val input = Files.newInputStream(file, StandardOpenOption.READ).use {
         CharStreams.fromStream(it)
       }
@@ -186,7 +192,8 @@ public class Sorter private constructor(
         tokens = tokens,
         rewriter = TokenStreamRewriter(tokens),
         errorListener = errorListener,
-        filePath = file.absolutePathString()
+        filePath = file.absolutePathString(),
+        insertBlankLines = insertBlankLines,
       )
       val tree = parser.script()
       walker.walk(listener, tree)
