@@ -17,6 +17,7 @@ import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
 import com.squareup.sort.Status.PARSE_ERROR
 import com.squareup.sort.Status.SUCCESS
+import com.squareup.sort.groovy.GroovySorter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystem
@@ -39,7 +40,15 @@ class SortCommand(
 ) {
 
   init {
-    context { helpFormatter = { context -> MordantHelpFormatter(context = context, showDefaultValues = true, showRequiredTag = true) } }
+    context {
+      helpFormatter = { context ->
+        MordantHelpFormatter(
+          context = context,
+          showDefaultValues = true,
+          showRequiredTag = true,
+        )
+      }
+    }
   }
 
   private val verbose by option("-v", "--verbose", help = "Verbose mode. All logs are printed.")
@@ -50,7 +59,11 @@ class SortCommand(
     help = "Flag to control whether file tree walking looks in build and hidden directories. True by default.",
   ).flag("--no-skip-hidden-and-build-dirs", default = true)
 
-  val mode by option("-m", "--mode", help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted")
+  val mode by option(
+    "-m",
+    "--mode",
+    help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
+  )
     .enum<Mode>().default(Mode.SORT)
 
   val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
@@ -102,7 +115,7 @@ class SortCommand(
     var alreadySortedCount = 0
     filesToSort.parallelStream().forEach { file ->
       try {
-        val newContent = Sorter.sorterFor(file).rewritten()
+        val newContent = Sorter.of(file).rewritten()
         file.writeText(newContent, Charsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING)
         logger.trace("Successfully sorted: ${file.pathString} ")
         successCount++
@@ -144,7 +157,7 @@ class SortCommand(
 
     filesToSort.parallelStream().forEach { file ->
       try {
-        val sorter = Sorter.sorterFor(file)
+        val sorter = Sorter.of(file)
         if (!sorter.isSorted() && !sorter.hasParseErrors()) {
           logger.trace("Not ordered: ${file.pathString} ")
           notSorted.add(file)

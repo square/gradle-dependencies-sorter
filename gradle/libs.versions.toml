@@ -4,6 +4,7 @@ dagp = "1.30.0"
 java = "11"
 junit5 = "5.7.2"
 kotlin = "1.9.24"
+kotlinEditor = "0.4"
 mavenPublish = "0.28.0"
 moshi = "1.14.0"
 retrofit = "2.9.0"
@@ -14,6 +15,8 @@ antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
 antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
 grammar = "com.autonomousapps:gradle-script-grammar:0.3"
+kotlinEditor-core = { module = "app.cash.kotlin-editor:core", version.ref = "kotlinEditor" }
+kotlinEditor-grammar = { module = "app.cash.kotlin-editor:grammar", version.ref = "kotlinEditor" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
