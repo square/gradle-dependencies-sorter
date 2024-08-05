@@ -4,34 +4,12 @@ pluginManagement {
 
 plugins {
   id 'com.gradle.develocity' version '3.17.1'
-  id 'me.champeau.includegit' version '0.1.6'
 }
 
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
   }
-}
-
-// Configure 'me.champeau.includegit' plugin to enable concurrent development on the gradle-script-grammar project.
-// See also https://github.com/melix/includegit-gradle-plugin and
-// https://melix.github.io/includegit-gradle-plugin/latest/index.html.
-if (grammarAsSource()) {
-  gitRepositories {
-    include('gradleScriptGrammar') {
-      uri = 'git@github.com:autonomousapps/gradle-script-grammar.git'
-      // optional, set what branch to use
-      branch = 'main'
-    }
-  }
-}
-
-// Run build with `-PincludeGrammar=true`,
-// or add `-PincludeGrammar=true` to gradle.properties or ~/.gradle/gradle.properties
-boolean grammarAsSource() {
-  return providers.gradleProperty('includeGrammar')
-    .map { it.toBoolean() }
-    .getOrElse(false)
 }
 
 rootProject.name = 'gradle-dependencies-sorter'
