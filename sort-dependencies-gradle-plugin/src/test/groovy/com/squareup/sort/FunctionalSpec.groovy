@@ -62,7 +62,7 @@ final class FunctionalSpec extends Specification {
     Files.writeString(buildScript, BUILD_SCRIPT)
 
     when: 'We sort dependencies'
-    build(dir, 'sortDependencies')
+    build(dir, 'sortDependencies', '--verbose')
 
     then: 'Dependencies are sorted'
     buildScript.text == """\

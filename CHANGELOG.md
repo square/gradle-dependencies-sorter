@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.8
+* [New] improve support for parsing Kotlin DSL, using KotlinEditor.
+* [Chore] built with Gradle 8.9.
+
 ## Version 0.7
 * [Fix] Fix verbose flag in SortDependenciesTask.
 * [Chore] Switch to Clikt CLI.
