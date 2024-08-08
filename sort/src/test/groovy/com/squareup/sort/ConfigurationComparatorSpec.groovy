@@ -13,7 +13,7 @@ final class ConfigurationComparatorSpec extends Specification {
         'implementation', 'api', 'releaseImplementation', 'debugApi', 'fooApi', 'kapt',
         'annotationProcessor', 'runtimeOnly', 'compileOnly', 'compileOnlyApi', 'testRuntimeOnly',
         'testCompileOnly', 'testImplementation', 'androidTestImplementation',
-        'antlr', 'foo', 'bar', 'baz', 'ksp'
+        'antlr', 'foo', 'bar', 'baz'
     ]
 
     when:
@@ -37,7 +37,6 @@ final class ConfigurationComparatorSpec extends Specification {
         'runtimeOnly',
         'annotationProcessor',
         'kapt',
-        'ksp',
         'testImplementation',
         'testCompileOnly',
         'testRuntimeOnly',
