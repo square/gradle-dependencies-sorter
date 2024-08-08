@@ -8,6 +8,7 @@ kotlin {
 
 dependencies {
   api libs.grammar
+  api libs.kotlinEditor.core
 
   testImplementation libs.spock
 }
