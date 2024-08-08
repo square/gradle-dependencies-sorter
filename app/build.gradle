@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   id 'com.squareup.app'
+  id 'signing'
   alias(libs.plugins.mavenPublish)
 }
 
@@ -54,6 +55,13 @@ publishing {
     distZip(MavenPublication) {
       artifactId = 'sort-gradle-dependencies-dist'
       artifact shadowDistZip
+      signing {
+        useInMemoryPgpKeys(
+          project.findProperty("signingInMemoryKey"),
+          project.findProperty("signingInMemoryKeyPassword")
+        )
+        sign publications.distZip
+      }
     }
   }
   repositories {
