@@ -64,7 +64,7 @@ final class FunctionalSpec extends Specification {
     build(dir, 'sortDependencies', '--verbose')
 
     then: 'Dependencies are sorted'
-    buildScript.text == """\
+    buildScript.text == normalize("""\
       plugins {
         id 'java-library'
         id 'com.squareup.sort-dependencies'
@@ -79,7 +79,7 @@ final class FunctionalSpec extends Specification {
         implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
         implementation('com.squareup.okhttp3:okhttp:4.10.0')
         implementation('com.squareup.okio:okio:3.2.0')
-      }""".stripIndent()
+      }""").stripIndent()
   }
 
   def "can sort build.gradle.kts"() {
@@ -91,7 +91,7 @@ final class FunctionalSpec extends Specification {
     build(dir, 'sortDependencies')
 
     then: 'Dependencies are sorted'
-    buildScript.text == """\
+    buildScript.text == normalize("""\
       plugins {
         `java-library`
         id("com.squareup.sort-dependencies")
@@ -106,7 +106,7 @@ final class FunctionalSpec extends Specification {
         implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
         implementation("com.squareup.okhttp3:okhttp:4.10.0")
         implementation("com.squareup.okio:okio:3.2.0")
-      }""".stripIndent()
+      }""").stripIndent()
   }
 
   def "can sort build.gradle.kts with string property declaration"() {
@@ -118,7 +118,7 @@ final class FunctionalSpec extends Specification {
     build(dir, 'sortDependencies')
 
     then: 'Dependencies are sorted'
-    buildScript.text == """\
+    buildScript.text == normalize("""\
       plugins {
         `java-library`
         id("com.squareup.sort-dependencies")
@@ -136,7 +136,7 @@ final class FunctionalSpec extends Specification {
         implementation(platform(okhttp3Bom))
         implementation("com.squareup.okio:okio:3.2.0")
         implementation(okhttp3)
-      }""".stripIndent()
+      }""").stripIndent()
   }
 
   def "can check sort order"() {
@@ -259,7 +259,7 @@ final class FunctionalSpec extends Specification {
     given: 'A build script with unsorted dependencies and multiple configurations'
     def buildScript = dir.resolve('build.gradle.kts')
     Files.writeString(buildScript,
-      """\
+      normalize("""\
         plugins {
           `java-library`
           id("com.squareup.sort-dependencies")
@@ -279,14 +279,14 @@ final class FunctionalSpec extends Specification {
           api("com.squareup.okhttp3:okhttp:4.10.0")
           testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
         }
-      """.stripIndent()
+      """).stripIndent()
     )
 
     when: 'We sort dependencies in the build folder'
     build(dir, 'sortDependencies')
 
     then: 'The build script is sorted with no blank lines between api and implementation'
-    buildScript.text == """\
+    buildScript.text == normalize("""\
       plugins {
         `java-library`
         id("com.squareup.sort-dependencies")
@@ -306,14 +306,14 @@ final class FunctionalSpec extends Specification {
         implementation("com.squareup.okio:okio:3.2.0")
         testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
       }
-    """.stripIndent()
+    """).stripIndent()
   }
 
   def "insert blank lines between different configurations when flag is enabled"() {
     given: 'A build script with unsorted dependencies and multiple configurations'
     def buildScript = dir.resolve('build.gradle.kts')
     Files.writeString(buildScript,
-      """\
+      normalize("""\
         plugins {
           `java-library`
           id("com.squareup.sort-dependencies")
@@ -333,14 +333,14 @@ final class FunctionalSpec extends Specification {
           api("com.squareup.okhttp3:okhttp:4.10.0")
           testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
         }
-      """.stripIndent()
+      """).stripIndent()
     )
 
     when: 'We sort dependencies in the build folder'
     build(dir, 'sortDependencies')
 
     then: 'The build script is sorted with a blank line between api and implementation'
-    buildScript.text == """\
+    buildScript.text == normalize("""\
       plugins {
         `java-library`
         id("com.squareup.sort-dependencies")
@@ -362,10 +362,10 @@ final class FunctionalSpec extends Specification {
 
         testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
       }
-    """.stripIndent()
+    """).stripIndent()
   }
 
-  private static final BUILD_SCRIPT = """\
+  private static final BUILD_SCRIPT = normalize("""\
     plugins {
       id 'java-library'
       id 'com.squareup.sort-dependencies'
@@ -380,7 +380,7 @@ final class FunctionalSpec extends Specification {
       implementation('com.squareup.okio:okio:3.2.0')
       implementation('com.squareup.okhttp3:okhttp:4.10.0')
       implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
-    }""".stripIndent()
+    }""").stripIndent()
 
   private String buildScriptWithVersion(String version) {
     """\
@@ -405,7 +405,7 @@ final class FunctionalSpec extends Specification {
       }""".stripIndent()
   }
 
-  private static final BUILD_SCRIPT_KTS = """\
+  private static final BUILD_SCRIPT_KTS = normalize("""\
     plugins {
       `java-library`
       id("com.squareup.sort-dependencies")
@@ -420,9 +420,9 @@ final class FunctionalSpec extends Specification {
       implementation("com.squareup.okio:okio:3.2.0")
       implementation("com.squareup.okhttp3:okhttp:4.10.0")
       implementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
-    }""".stripIndent()
+    }""").stripIndent()
 
-  private static final BUILD_SCRIPT_KTS_STRING = """\
+  private static final BUILD_SCRIPT_KTS_STRING = normalize("""\
     plugins {
       `java-library`
       id("com.squareup.sort-dependencies")
@@ -440,5 +440,9 @@ final class FunctionalSpec extends Specification {
       implementation("com.squareup.okio:okio:3.2.0")
       implementation(okhttp3)
       implementation(platform(okhttp3Bom))
-    }""".stripIndent()
+    }""").stripIndent()
+
+    private static CharSequence normalize(CharSequence input, String lineSeparator = System.lineSeparator()) {
+      return input.stripIndent().replace('\n', lineSeparator)
+    }
 }

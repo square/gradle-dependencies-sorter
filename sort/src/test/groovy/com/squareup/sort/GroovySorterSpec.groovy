@@ -69,7 +69,8 @@ final class GroovySorterSpec extends Specification {
           println 'hello, world'
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -141,7 +142,8 @@ final class GroovySorterSpec extends Specification {
       lineSeparator
     )
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript, lineSeparator)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -178,7 +180,8 @@ final class GroovySorterSpec extends Specification {
         lineSeparator
     )
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript, lineSeparator)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -269,7 +272,8 @@ final class GroovySorterSpec extends Specification {
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -312,7 +316,8 @@ final class GroovySorterSpec extends Specification {
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -363,7 +368,8 @@ final class GroovySorterSpec extends Specification {
     Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -449,7 +455,8 @@ final class GroovySorterSpec extends Specification {
         }
       ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = GroovySorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -517,7 +524,8 @@ final class GroovySorterSpec extends Specification {
     Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -561,7 +569,8 @@ final class GroovySorterSpec extends Specification {
     Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -641,7 +650,8 @@ final class GroovySorterSpec extends Specification {
     Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -684,7 +694,8 @@ final class GroovySorterSpec extends Specification {
         }''', lineSeparator)
     Files.writeString(buildScript, fileContent)
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -765,7 +776,8 @@ final class GroovySorterSpec extends Specification {
     Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     extractLineSeparators(newScript).every { it == lineSeparator }

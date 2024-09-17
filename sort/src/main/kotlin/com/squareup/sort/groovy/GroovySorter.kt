@@ -34,6 +34,7 @@ public class GroovySorter private constructor(
   private val errorListener: RewriterErrorListener,
   private val filePath: String,
   private val config: Sorter.Config,
+  private val lineSeparator: String,
 ) : Sorter, GradleScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
@@ -173,10 +174,10 @@ public class GroovySorter private constructor(
             newOrder += declaration
 
             // Write preceding comments if there are any
-            if (texts.comment != null) appendLine(texts.comment)
+            if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
 
-            append(indent)
-            appendLine(texts.declarationText)
+            append(indent.replace("\r", ""))
+            appendLine(texts.declarationText.replace("\r", ""))
           }
       }
     append("}")
@@ -184,7 +185,7 @@ public class GroovySorter private constructor(
     // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
     // dependencies blocks
     ordering.checkOrdering(newOrder)
-  }
+  }.replace("\n", lineSeparator)
 
   private fun precedingComment(dependency: GroovyDependencyDeclaration) =
     tokens.getHiddenTokensToLeft(
@@ -197,7 +198,7 @@ public class GroovySorter private constructor(
   public companion object {
     @JvmStatic
     @JvmOverloads
-    public fun of(file: Path, config: Sorter.Config = Sorter.defaultConfig()): GroovySorter {
+    public fun of(file: Path, config: Sorter.Config = Sorter.defaultConfig(), lineSeparator: String = System.lineSeparator()): GroovySorter {
       val input = Files.newInputStream(file, StandardOpenOption.READ).use {
         CharStreams.fromStream(it)
       }
@@ -220,6 +221,7 @@ public class GroovySorter private constructor(
         errorListener = errorListener,
         filePath = file.absolutePathString(),
         config = config,
+        lineSeparator = lineSeparator,
       )
       val tree = parser.script()
       walker.walk(listener, tree)

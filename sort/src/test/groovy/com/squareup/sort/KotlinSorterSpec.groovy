@@ -68,7 +68,8 @@ class KotlinSorterSpec extends Specification {
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
 
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -139,7 +140,8 @@ class KotlinSorterSpec extends Specification {
           }''',
       lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = KotlinSorter.of(buildScript, lineSeparator)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -176,7 +178,8 @@ class KotlinSorterSpec extends Specification {
       lineSeparator
     )
     Files.writeString(buildScript, fileContent)
-    def sorter = KotlinSorter.of(buildScript, lineSeparator)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -215,7 +218,8 @@ class KotlinSorterSpec extends Specification {
       lineSeparator
     )
     Files.writeString(buildScript, fileContent)
-    def sorter = KotlinSorter.of(buildScript, lineSeparator)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -260,10 +264,12 @@ class KotlinSorterSpec extends Specification {
           }
         }'''.stripIndent()
     )
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
-    assertThat(sorter.rewritten()).isEqualTo(
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           val complex = "a:complex:$expression"
@@ -281,7 +287,10 @@ class KotlinSorterSpec extends Specification {
 
           testImplementation("g:e:1")
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort build script with four-space tabs"() {
@@ -312,7 +321,8 @@ class KotlinSorterSpec extends Specification {
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -355,7 +365,8 @@ class KotlinSorterSpec extends Specification {
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -387,7 +398,8 @@ class KotlinSorterSpec extends Specification {
     Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -449,7 +461,8 @@ class KotlinSorterSpec extends Specification {
           println("hello, world")
         ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     when:
     sorter.rewritten()
@@ -477,7 +490,8 @@ class KotlinSorterSpec extends Specification {
         }
       ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -510,7 +524,8 @@ class KotlinSorterSpec extends Specification {
         }
       ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
     extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
@@ -576,7 +591,8 @@ class KotlinSorterSpec extends Specification {
     Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -620,7 +636,8 @@ class KotlinSorterSpec extends Specification {
     Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -701,7 +718,8 @@ class KotlinSorterSpec extends Specification {
     Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -744,7 +762,8 @@ class KotlinSorterSpec extends Specification {
       ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
@@ -826,7 +845,8 @@ class KotlinSorterSpec extends Specification {
     Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     extractLineSeparators(newScript).every { it == lineSeparator }
