@@ -3,6 +3,7 @@ package com.squareup.sort
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.ProjectLayout
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 
 @Suppress("unused")
@@ -27,10 +28,10 @@ class SortDependenciesPlugin : Plugin<Project> {
     }
 
     tasks.register("sortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("sort", target, sortApp)
+      t.configure(target, sortApp)
     }
-    val checkTask = tasks.register("checkSortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("check", target, sortApp)
+    val checkTask = tasks.register("checkSortDependencies", CheckSortDependenciesTask::class.java) { t ->
+      t.configure(target, sortApp, layout)
     }
 
     afterEvaluate {
@@ -46,13 +47,22 @@ class SortDependenciesPlugin : Plugin<Project> {
   }
 
   private fun SortDependenciesTask.configure(
-    mode: String,
     project: Project,
     sortApp: Configuration
   ) {
     buildScript.set(project.buildFile)
     sortProgram.setFrom(sortApp)
     version.set(extension.version)
-    this.mode.set(mode)
+  }
+
+  private fun CheckSortDependenciesTask.configure(
+    project: Project,
+    sortApp: Configuration,
+    layout: ProjectLayout
+  ) {
+    buildScript.set(project.buildFile)
+    sortProgram.setFrom(sortApp)
+    version.set(extension.version)
+    outputDirectory.set(layout.buildDirectory.dir("generated/sort-dependencies"))
   }
 }
