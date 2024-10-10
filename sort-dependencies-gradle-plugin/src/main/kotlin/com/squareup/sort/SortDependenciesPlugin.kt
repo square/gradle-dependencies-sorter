@@ -12,8 +12,11 @@ class SortDependenciesPlugin : Plugin<Project> {
     const val VERSION_FILENAME = "com-squareup-sort-version.txt"
   }
 
+  private lateinit var extension: SortDependenciesExtension
+
   override fun apply(target: Project): Unit = target.run {
-    val extension = SortDependenciesExtension.create(this)
+    extension = SortDependenciesExtension.create(this)
+
     // nb: Can't use a detached configuration because that needs a Dependency, not a dependency notation. The latter can
     // be lazily evaluated (as below) while the former needs to (e.g.) know its version eagerly: it is more constrained.
     val sortApp = configurations.maybeCreate("sortDependencies").apply {
@@ -49,6 +52,7 @@ class SortDependenciesPlugin : Plugin<Project> {
   ) {
     buildScript.set(project.buildFile)
     sortProgram.setFrom(sortApp)
+    version.set(extension.version)
     this.mode.set(mode)
   }
 }

@@ -37,6 +37,10 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:InputFiles
   abstract val sortProgram: ConfigurableFileCollection
 
+  /** The app version limits what options we can pass it. */
+  @get:Input
+  abstract val version: Property<String>
+
   @get:Input
   abstract val mode: Property<String>
 
@@ -45,8 +49,7 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:Input
   abstract val verbose: Property<Boolean>
 
-  @TaskAction
-  fun action() {
+  @TaskAction fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
     val verbose = verbose.getOrElse(false)
@@ -57,19 +60,35 @@ abstract class SortDependenciesTask @Inject constructor(
 
     logger.info("Sorting '$buildScript' using mode '$mode'.")
 
+    val version = version.get().removeSuffix("-SNAPSHOT").toDouble()
+
     execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {
         mainClass.set("com.squareup.sort.MainKt")
         classpath = sortProgram
         args = buildList {
           add(buildScript)
-          add("--mode")
-          add(mode)
+          option("--mode", mode)
+
+          // Not really intended to be user-specified
+          if (version > 0.8) {
+            option("--context", "gradle")
+          }
+
           if (verbose) {
-            add("--verbose")
+            if (version < 0.3) {
+              logger.warn("--verbose specified by version < 0.3. Ignoring flag.")
+            } else {
+              add("--verbose")
+            }
           }
         }
       }
     }
+  }
+
+  private fun MutableList<String>.option(name: String, value: String) {
+    add(name)
+    add(value)
   }
 }
