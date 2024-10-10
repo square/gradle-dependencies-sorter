@@ -27,6 +27,10 @@ internal class KotlinDependencyDeclaration(
     return base.type == Type.FILE
   }
 
+  override fun isGradleDistributionDependency(): Boolean {
+    return base.type == Type.GRADLE_DISTRIBUTION
+  }
+
   override fun isProjectDependency(): Boolean {
     return base.type == Type.PROJECT
   }

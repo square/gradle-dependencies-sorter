@@ -8,7 +8,11 @@ internal interface DependencyDeclaration {
   fun isPlatformDeclaration(): Boolean
   fun isTestFixturesDeclaration(): Boolean
 
+  /** TODO(tsr): what about files and fileTree? */
   fun isFileDependency(): Boolean
+
+  fun isGradleDistributionDependency(): Boolean
+
   fun isProjectDependency(): Boolean
 
   /**
