@@ -28,11 +28,16 @@ internal class DependencyComparator : Comparator<DependencyDeclaration> {
     right: DependencyDeclaration,
   ): Int {
     if (left.isProjectDependency() && right.isProjectDependency()) return compareDependencies(
-      left,
-      right
+      left, right
     )
     if (left.isProjectDependency()) return -1
     if (right.isProjectDependency()) return 1
+
+    if (left.isGradleDistributionDependency() && right.isGradleDistributionDependency()) return compareDependencies(
+      left, right
+    )
+    if (left.isGradleDistributionDependency()) return -1
+    if (right.isGradleDistributionDependency()) return 1
 
     if (left.isFileDependency() && right.isFileDependency()) return compareDependencies(left, right)
     if (left.isFileDependency()) return -1

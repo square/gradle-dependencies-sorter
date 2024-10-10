@@ -47,8 +47,12 @@ internal class GroovyDependencyDeclaration(
   override fun isPlatformDeclaration() = declarationKind == DeclarationKind.PLATFORM
   override fun isTestFixturesDeclaration() = declarationKind == DeclarationKind.TEST_FIXTURES
 
-  override fun isProjectDependency() = dependencyKind == DependencyKind.PROJECT
   override fun isFileDependency() = dependencyKind == DependencyKind.FILE
+
+  /** TODO(tsr): implement DependencyKind.GRADLE_DISTRIBUTION */
+  override fun isGradleDistributionDependency(): Boolean = false
+
+  override fun isProjectDependency() = dependencyKind == DependencyKind.PROJECT
 
   override fun hasQuotes(): Boolean {
     val i = declaration.children.indexOf(dependency)
