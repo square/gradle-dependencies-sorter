@@ -122,6 +122,11 @@ final class FunctionalSpec extends Specification {
 
     then: 'Dependencies are not sorted'
     result.output.contains('1 scripts are not ordered correctly.')
+    result.output.contains(
+      '''\
+      Fix by running
+      ./gradlew sortDependencies'''.stripIndent()
+    )
   }
 
   def "checks sort order when executing 'check' task"() {

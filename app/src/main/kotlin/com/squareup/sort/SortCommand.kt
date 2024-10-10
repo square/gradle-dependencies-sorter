@@ -17,7 +17,6 @@ import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.Status.NOT_SORTED
 import com.squareup.sort.Status.PARSE_ERROR
 import com.squareup.sort.Status.SUCCESS
-import com.squareup.sort.groovy.GroovySorter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.FileSystem
@@ -28,9 +27,7 @@ import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
-/**
- * Parent command or entry point into the dependencies-sorter.
- */
+/** Parent command or entry point into the dependencies-sorter. */
 class SortCommand(
   private val fileSystem: FileSystem = FileSystems.getDefault(),
   private val buildFileFinder: BuildDotGradleFinder.Factory = object : BuildDotGradleFinder.Factory {}
@@ -51,8 +48,14 @@ class SortCommand(
     }
   }
 
-  private val verbose by option("-v", "--verbose", help = "Verbose mode. All logs are printed.")
-    .flag("--quiet", default = false)
+  val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
+    .path(mustExist = false, canBeDir = true, canBeFile = true)
+    .multiple(required = true)
+
+  private val verbose by option(
+    "-v", "--verbose",
+    help = "Verbose mode. All logs are printed."
+  ).flag("--quiet", default = false)
 
   private val skipHiddenAndBuildDirs by option(
     "--skip-hidden-and-build-dirs",
@@ -60,15 +63,14 @@ class SortCommand(
   ).flag("--no-skip-hidden-and-build-dirs", default = true)
 
   val mode by option(
-    "-m",
-    "--mode",
-    help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted"
-  )
-    .enum<Mode>().default(Mode.SORT)
+    "-m", "--mode",
+    help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted."
+  ).enum<Mode>().default(Mode.SORT)
 
-  val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
-    .path(mustExist = false, canBeDir = true, canBeFile = true)
-    .multiple(required = true)
+  val context by option(
+    "--context",
+    help = "Context: [cli, gradle]. Defaults to 'cli'. Used for more helpful error messages.",
+  ).enum<Context>().default(Context.CLI)
 
   override fun run() {
     // Use `use()` to ensure the logger is closed + dumps any close-time diagnostics
@@ -191,16 +193,23 @@ class SortCommand(
       if (!success) {
         appendLine()
         appendLine("Fix by running")
-        appendLine(
-          notSorted.joinToString(
-            prefix = "./scripts/sort ",
-            separator = " ",
-            transform = {
-              // Log relative path of the unsorted file.
-              pwd.relativize(it.normalize()).pathString
-            },
-          )
-        )
+
+        when (context) {
+          Context.GRADLE -> appendLine("./gradlew sortDependencies")
+
+          Context.CLI -> {
+            appendLine(
+              notSorted.joinToString(
+                prefix = "./scripts/sort ",
+                separator = " ",
+                transform = {
+                  // Log relative path of the unsorted file.
+                  pwd.relativize(it.normalize()).pathString
+                },
+              )
+            )
+          }
+        }
       }
 
       appendLine()
@@ -219,9 +228,16 @@ class SortCommand(
   }
 }
 
+enum class Context {
+  CLI,
+  GRADLE,
+  ;
+}
+
 enum class Mode {
   SORT,
   CHECK,
+  ;
 }
 
 enum class Status(val value: Int) {
