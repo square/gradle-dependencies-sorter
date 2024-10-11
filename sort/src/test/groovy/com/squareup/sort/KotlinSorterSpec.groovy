@@ -178,6 +178,40 @@ class KotlinSorterSpec extends Specification {
     )
   }
 
+  def "can sort stringified configuration names correctly"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+        val functionalTest = configurations.getAt("functionalTest")
+        dependencies {
+          "integrationTest"("integ:test:1.0")
+          functionalTest("g:a:1")
+          implementation(libs.c)
+          api(libs.d)
+          testImplementation("g:e:1")
+        }'''.stripIndent()
+    )
+    def sorter = KotlinSorter.of(buildScript)
+
+    expect:
+    assertThat(sorter.rewritten()).isEqualTo(
+      '''\
+        val functionalTest = configurations.getAt("functionalTest")
+        dependencies {
+          api(libs.d)
+
+          implementation(libs.c)
+
+          testImplementation("g:e:1")
+
+          functionalTest("g:a:1")
+
+          "integrationTest"("integ:test:1.0")
+        }'''.stripIndent()
+    )
+  }
+
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
