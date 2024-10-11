@@ -1,10 +1,10 @@
 # gradle-dependencies-sorter
 
 ## Version 0.9
-[Fix]: sort testFixtures closer to test deps.
-[Fix]: update KotlinEditor and handle GRADLE_DISTRIBUTION type.
-[Fix]: suggest fix action based on invocation context.
-[Chore]: build with Gradle 8.10.2.
+* [Fix]: sort testFixtures closer to test deps.
+* [Fix]: update KotlinEditor and handle GRADLE_DISTRIBUTION type.
+* [Fix]: suggest fix action based on invocation context.
+* [Chore]: build with Gradle 8.10.2.
 
 ## Version 0.8
 * [New] improve support for parsing Kotlin DSL, using KotlinEditor.
