@@ -22,10 +22,6 @@ final class ConfigurationSpec extends Specification {
 
     then:
     assertThat(configurations).containsExactly(
-      'antlr',
-      'bar',
-      'baz',
-      'foo',
       'api',
       'fooApi',
       'debugApi',
@@ -40,6 +36,10 @@ final class ConfigurationSpec extends Specification {
       'testCompileOnly',
       'testRuntimeOnly',
       'androidTestImplementation',
+      'antlr',
+      'bar',
+      'baz',
+      'foo',
     ).inOrder()
   }
 }

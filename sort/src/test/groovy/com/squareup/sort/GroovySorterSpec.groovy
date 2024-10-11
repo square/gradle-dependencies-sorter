@@ -426,7 +426,7 @@ final class GroovySorterSpec extends Specification {
     given:
     def buildScript = dir.resolve('build.gradle')
     Files.writeString(buildScript,
-            '''\
+      '''\
           dependencies {
             implementation(projects.foo)
             implementation(projects.bar)
@@ -446,7 +446,7 @@ final class GroovySorterSpec extends Specification {
 
     and:
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
-            '''\
+      '''\
           dependencies {
             api(projects.bar)
             api(projects.foo)
@@ -462,7 +462,7 @@ final class GroovySorterSpec extends Specification {
     given:
     def buildScript = dir.resolve('build.gradle')
     Files.writeString(buildScript,
-            '''\
+      '''\
           dependencies {
             // Foo implementation
             implementation(projects.foo)
@@ -486,7 +486,7 @@ final class GroovySorterSpec extends Specification {
 
     and:
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
-            '''\
+      '''\
           dependencies {
             api(projects.bar)
             // Foo api 1st
@@ -502,7 +502,7 @@ final class GroovySorterSpec extends Specification {
     )).inOrder()
   }
 
-    def "sort add function call in dependencies"() {
+  def "sort add function call in dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle')
     Files.writeString(buildScript,
@@ -516,8 +516,7 @@ final class GroovySorterSpec extends Specification {
 
             add("debugImplementation", projects.foo)
             add(releaseImplementation, projects.foo)
-          }
-        '''.stripIndent())
+          }'''.stripIndent())
 
     when:
     def newScript = GroovySorter.of(buildScript).rewritten()
@@ -526,18 +525,19 @@ final class GroovySorterSpec extends Specification {
     notThrown(BuildScriptParseException)
 
     and:
-    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf('''\
-          dependencies {
-            add("debugImplementation", projects.foo)
-            add(releaseImplementation, projects.foo)
+    assertThat(newScript).isEqualTo(
+      '''\
+        dependencies {
+          api(projects.bar)
+          api(projects.foo)
 
-            api(projects.bar)
-            api(projects.foo)
+          implementation(projects.bar)
+          implementation(projects.foo)
 
-            implementation(projects.bar)
-            implementation(projects.foo)
-          }
-        '''.stripIndent())).inOrder()
+          add("debugImplementation", projects.foo)
+          add(releaseImplementation, projects.foo)
+        }'''.stripIndent()
+    )
   }
 
   def "can sort dependencies with artifact type specified"() {
@@ -556,8 +556,7 @@ final class GroovySorterSpec extends Specification {
           implementation libs.androidx.constraintLayout
           implementation libs.common.view
           implementation projects.core
-        }
-      '''.stripIndent())
+        }'''.stripIndent())
     when:
     def newScript = GroovySorter.of(buildScript).rewritten()
 
@@ -565,7 +564,7 @@ final class GroovySorterSpec extends Specification {
     notThrown(BuildScriptParseException)
 
     and:
-    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+    assertThat(newScript).isEqualTo(
       '''\
         dependencies {
           implementation libs.androidx.constraintLayout
@@ -578,9 +577,8 @@ final class GroovySorterSpec extends Specification {
           implementation projects.bar.public
           implementation projects.core
           implementation projects.foo.internal
-        }
-      '''.stripIndent()
-    )).inOrder()
+        }'''.stripIndent()
+    )
   }
 
   // https://github.com/square/gradle-dependencies-sorter/issues/59

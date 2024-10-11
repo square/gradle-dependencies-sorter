@@ -1,7 +1,7 @@
 package com.squareup.sort
 
 internal class Configuration(
-  private val configuration: String,
+  private val configurationName: String,
   val level: Int,
   /**
    * Android support. A "variant" configuration looks like "debugApi", "releaseImplementation", etc.
@@ -27,32 +27,32 @@ internal class Configuration(
       "androidTestImplementation" to { Configuration("androidTestImplementation", 12) },
     )
 
-    fun of(configuration: String): Configuration? {
+    fun of(configurationName: String): Configuration? {
       fun findConfiguration(
         predicate: (Pair<String, () -> Configuration>) -> Boolean
       ): Configuration? = values.find(predicate)?.second?.invoke()
 
       // Try to find an exact match
-      var matchingConfiguration = findConfiguration { it.first == configuration }
+      var matchingConfiguration = findConfiguration { it.first == configurationName }
 
       // If that failed, look for a variant
       if (matchingConfiguration == null) {
-        matchingConfiguration = findConfiguration { configuration.endsWith(it.first, true) }
+        matchingConfiguration = findConfiguration { configurationName.endsWith(it.first, true) }
         if (matchingConfiguration != null) {
-          matchingConfiguration.variant = configuration.substring(
+          matchingConfiguration.variant = configurationName.substring(
             0,
-            configuration.length - matchingConfiguration.configuration.length
+            configurationName.length - matchingConfiguration.configurationName.length
           )
         }
       }
 
       // Look for a variant again
       if (matchingConfiguration == null) {
-        matchingConfiguration = findConfiguration { configuration.startsWith(it.first, true) }
+        matchingConfiguration = findConfiguration { configurationName.startsWith(it.first, true) }
         if (matchingConfiguration != null) {
-          matchingConfiguration.variant = configuration.substring(
-            configuration.length - matchingConfiguration.configuration.length,
-            configuration.length
+          matchingConfiguration.variant = configurationName.substring(
+            configurationName.length - matchingConfiguration.configurationName.length,
+            configurationName.length
           )
         }
       }
@@ -69,10 +69,14 @@ internal class Configuration(
       val rightC = of(right)
 
       // Null means they don't map to a known configuration. So, compare by String natural order.
-      if (leftC == null && rightC == null) return left.compareTo(right)
-      // Unknown configuration is "higher than" known
-      if (rightC == null) return 1
-      if (leftC == null) return -1
+      if (leftC == null && rightC == null) {
+        // In Kotlin DSL, custom configurations can be like `"functionalTest"(foo)`. We want to sort ignoring the
+        // quotation marks.
+        return left.removeSurrounding("\"").compareTo(right.removeSurrounding("\""))
+      }
+      // Unknown configuration is "lower than" known
+      if (rightC == null) return -1
+      if (leftC == null) return 1
 
       val c = leftC.level.compareTo(rightC.level)
 
