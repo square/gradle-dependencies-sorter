@@ -146,6 +146,38 @@ class KotlinSorterSpec extends Specification {
     )).inOrder()
   }
 
+  def "can sort testFixtures correctly"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          testFixturesImplementation("g:a:1")
+          testFixturesApi("g:b:1")
+          implementation(libs.c)
+          api(libs.d)
+          testImplementation("g:e:1")
+        }'''.stripIndent()
+    )
+    def sorter = KotlinSorter.of(buildScript)
+
+    expect:
+    assertThat(sorter.rewritten()).isEqualTo(
+      '''\
+        dependencies {
+          api(libs.d)
+
+          implementation(libs.c)
+
+          testFixturesApi("g:b:1")
+
+          testFixturesImplementation("g:a:1")
+
+          testImplementation("g:e:1")
+        }'''.stripIndent()
+    )
+  }
+
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')

@@ -11,7 +11,7 @@ internal class Configuration(
 ) {
 
   companion object {
-    val values = listOf(
+    private val values = listOf(
       "api" to { Configuration("api", 0) },
       "implementation" to { Configuration("implementation", 1) },
       "compileOnlyApi" to { Configuration("compileOnlyApi", 2) },
@@ -19,18 +19,18 @@ internal class Configuration(
       "runtimeOnly" to { Configuration("runtimeOnly", 4) },
       "annotationProcessor" to { Configuration("annotationProcessor", 5) },
       "kapt" to { Configuration("kapt", 6) },
-      "testImplementation" to { Configuration("testImplementation", 7) },
-      "testCompileOnly" to { Configuration("testCompileOnly", 8) },
-      "testRuntimeOnly" to { Configuration("testRuntimeOnly", 9) },
-      "androidTestImplementation" to { Configuration("androidTestImplementation", 10) },
+      "testFixturesApi" to { Configuration("testFixturesApi", 7) },
+      "testFixturesImplementation" to { Configuration("testFixturesImplementation", 8) },
+      "testImplementation" to { Configuration("testImplementation", 9) },
+      "testCompileOnly" to { Configuration("testCompileOnly", 10) },
+      "testRuntimeOnly" to { Configuration("testRuntimeOnly", 11) },
+      "androidTestImplementation" to { Configuration("androidTestImplementation", 12) },
     )
 
     fun of(configuration: String): Configuration? {
       fun findConfiguration(
         predicate: (Pair<String, () -> Configuration>) -> Boolean
-      ): Configuration? {
-        return values.find(predicate)?.second?.invoke()
-      }
+      ): Configuration? = values.find(predicate)?.second?.invoke()
 
       // Try to find an exact match
       var matchingConfiguration = findConfiguration { it.first == configuration }

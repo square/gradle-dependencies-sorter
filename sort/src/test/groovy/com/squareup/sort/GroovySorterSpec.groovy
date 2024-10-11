@@ -115,6 +115,69 @@ final class GroovySorterSpec extends Specification {
     )).inOrder()
   }
 
+  def "can sort build script with gradleApi() dep"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+          dependencies {
+            implementation 'heart:of-gold:1.0'
+            api project(':marvin')
+
+            implementation 'sad:robot:1.0'
+            api gradleApi()
+            implementation testFixtures(libs.magic)
+            implementation platform(project(':platform'))
+          }'''.stripIndent())
+    def sorter = GroovySorter.of(buildScript)
+
+    expect:
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+          dependencies {
+            api project(':marvin')
+            api gradleApi()
+
+            implementation platform(project(':platform'))
+            implementation testFixtures(libs.magic)
+            implementation 'heart:of-gold:1.0'
+            implementation 'sad:robot:1.0'
+          }'''.stripIndent()
+    )).inOrder()
+  }
+
+  def "can sort testFixtures correctly"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          testFixturesImplementation 'g:a:1'
+          testFixturesApi 'g:b:1'
+          implementation libs.c
+          api libs.d
+          testImplementation 'g:e:1'
+        }'''.stripIndent()
+    )
+    def sorter = GroovySorter.of(buildScript)
+
+    expect:
+    assertThat(sorter.rewritten()).isEqualTo(
+      '''\
+        dependencies {
+          api libs.d
+
+          implementation libs.c
+
+          testFixturesApi 'g:b:1'
+
+          testFixturesImplementation 'g:a:1'
+
+          testImplementation 'g:e:1'
+        }'''.stripIndent()
+    )
+  }
+
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle')
