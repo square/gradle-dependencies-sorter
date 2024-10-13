@@ -18,12 +18,12 @@ import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.TokenStreamRewriter
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 
 public class KotlinSorter private constructor(
   private val input: CharStream,
   private val tokens: CommonTokenStream,
   private val errorListener: CollectingErrorListener,
+  private val config: Sorter.Config,
 ) : Sorter, KotlinParserBaseListener() {
 
   private val rewriter = TokenStreamRewriter(tokens)
@@ -134,7 +134,8 @@ public class KotlinSorter private constructor(
     // declarations
     mutableDependencies.declarations().sortedWith(KotlinConfigurationComparator)
       .forEachIndexed { i, entry ->
-        if (i != 0) appendLine()
+        // Place a blank line between chunks of the same configuration, if configured
+        if (i != 0 && config.insertBlankLines) appendLine()
 
         entry.value.sortedWith(dependencyComparator)
           .map { dependency ->
@@ -165,7 +166,8 @@ public class KotlinSorter private constructor(
 
   public companion object {
     @JvmStatic
-    public fun of(file: Path): KotlinSorter {
+    @JvmOverloads
+    public fun of(file: Path, config: Sorter.Config = Sorter.defaultConfig()): KotlinSorter {
       val errorListener = CollectingErrorListener()
 
       return Parser(
@@ -177,6 +179,7 @@ public class KotlinSorter private constructor(
             input = input,
             tokens = tokens,
             errorListener = errorListener,
+            config = config,
           )
         }
       ).listener()
