@@ -32,6 +32,7 @@ public class GroovySorter private constructor(
   private val rewriter: TokenStreamRewriter,
   private val errorListener: RewriterErrorListener,
   private val filePath: String,
+  private val lineSeparator: String,
 ) : Sorter, GradleScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
@@ -161,10 +162,10 @@ public class GroovySorter private constructor(
             newOrder += declaration
 
             // Write preceding comments if there are any
-            if (texts.comment != null) appendLine(texts.comment)
+            if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
 
-            append(indent)
-            appendLine(texts.declarationText)
+            append(indent.replace("\r", ""))
+            appendLine(texts.declarationText.replace("\r", ""))
           }
       }
     append("}")
@@ -172,7 +173,7 @@ public class GroovySorter private constructor(
     // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
     // dependencies blocks
     ordering.checkOrdering(newOrder)
-  }
+  }.replace("\n", lineSeparator)
 
   private fun precedingComment(dependency: GroovyDependencyDeclaration) =
     tokens.getHiddenTokensToLeft(
@@ -185,6 +186,10 @@ public class GroovySorter private constructor(
   public companion object {
     @JvmStatic
     public fun of(file: Path): GroovySorter {
+      return of(file, System.lineSeparator())
+    }
+    @JvmStatic
+    public fun of(file: Path, lineSeparator: String): GroovySorter {
       val input = Files.newInputStream(file, StandardOpenOption.READ).use {
         CharStreams.fromStream(it)
       }
@@ -205,7 +210,8 @@ public class GroovySorter private constructor(
         tokens = tokens,
         rewriter = TokenStreamRewriter(tokens),
         errorListener = errorListener,
-        filePath = file.absolutePathString()
+        filePath = file.absolutePathString(),
+        lineSeparator = lineSeparator,
       )
       val tree = parser.script()
       walker.walk(listener, tree)

@@ -24,6 +24,7 @@ public class KotlinSorter private constructor(
   private val input: CharStream,
   private val tokens: CommonTokenStream,
   private val errorListener: CollectingErrorListener,
+  private val lineSeparator: String,
 ) : Sorter, KotlinParserBaseListener() {
 
   private val rewriter = TokenStreamRewriter(tokens)
@@ -148,10 +149,10 @@ public class KotlinSorter private constructor(
             newOrder += declaration
 
             // Write preceding comments if there are any
-            if (texts.comment != null) appendLine(texts.comment)
+            if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
 
             append(indent.repeat(level))
-            appendLine(texts.declarationText)
+            appendLine(texts.declarationText.replace("\r", ""))
           }
       }
 
@@ -161,11 +162,15 @@ public class KotlinSorter private constructor(
     // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
     // dependencies blocks
     ordering.checkOrdering(newOrder)
-  }
+  }.replace("\n", lineSeparator)
 
   public companion object {
     @JvmStatic
     public fun of(file: Path): KotlinSorter {
+      return of(file, System.lineSeparator())
+    }
+    @JvmStatic
+    public fun of(file: Path, lineSeparator: String): KotlinSorter {
       val errorListener = CollectingErrorListener()
 
       return Parser(
@@ -177,6 +182,7 @@ public class KotlinSorter private constructor(
             input = input,
             tokens = tokens,
             errorListener = errorListener,
+            lineSeparator = lineSeparator,
           )
         }
       ).listener()
