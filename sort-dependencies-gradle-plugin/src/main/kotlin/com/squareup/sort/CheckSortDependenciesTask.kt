@@ -37,6 +37,7 @@ abstract class CheckSortDependenciesTask @Inject constructor(
     val version = VersionNumber.parse(version.get().removeSuffix("-SNAPSHOT"))
 
     val result = execOps.exec { execSpec ->
+      execSpec.setIgnoreExitValue(true)
       execSpec.commandLine = listOf(
         "java",
         "-cp", sortProgram.asPath,
@@ -67,5 +68,13 @@ abstract class CheckSortDependenciesTask @Inject constructor(
     }
 
     output.writeText(resultText)
+
+    if (result.exitValue == 2) {
+      throw VerificationException("Dependencies are not correctly sorted.")
+    } else if (result.exitValue == 3) {
+      throw RuntimeException("There were parse errors.")
+    } else if (result.exitValue > 0) {
+      throw RuntimeException("The command failed with exit code ${result.exitValue}.")
+    }
   }
 }
