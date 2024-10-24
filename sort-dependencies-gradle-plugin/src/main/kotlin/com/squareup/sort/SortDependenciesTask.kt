@@ -1,5 +1,6 @@
 package com.squareup.sort
 
+import com.squareup.sort.internal.VersionNumber
 import org.gradle.api.DefaultTask
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.file.ConfigurableFileCollection
@@ -60,7 +61,7 @@ abstract class SortDependenciesTask @Inject constructor(
 
     logger.info("Sorting '$buildScript' using mode '$mode'.")
 
-    val version = version.get().removeSuffix("-SNAPSHOT").toDouble()
+    val version = VersionNumber.parse(version.get().removeSuffix("-SNAPSHOT"))
 
     execOps.javaexec { javaExecSpec ->
       with(javaExecSpec) {
@@ -71,12 +72,12 @@ abstract class SortDependenciesTask @Inject constructor(
           option("--mode", mode)
 
           // Not really intended to be user-specified
-          if (version > 0.8) {
+          if (version > VersionNumber.parse("0.8")) {
             option("--context", "gradle")
           }
 
           if (verbose) {
-            if (version < 0.3) {
+            if (version < VersionNumber.parse("0.3")) {
               logger.warn("--verbose specified by version < 0.3. Ignoring flag.")
             } else {
               add("--verbose")
