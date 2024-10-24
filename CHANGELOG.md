@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.10
+* [Feat]: support enforcedPlatform
+* [Fix]: bad version-checking logic was hiding check results.
+
 ## Version 0.9
 * [Fix]: sort testFixtures closer to test deps.
 * [Fix]: update KotlinEditor and handle GRADLE_DISTRIBUTION type.
