@@ -15,6 +15,10 @@ internal class KotlinDependencyDeclaration(
 
   override fun precedingComment(): String? = base.precedingComment
 
+  override fun isEnforcedPlatformDeclaration(): Boolean {
+    return base.capability == Capability.ENFORCED_PLATFORM
+  }
+
   override fun isPlatformDeclaration(): Boolean {
     return base.capability == Capability.PLATFORM
   }

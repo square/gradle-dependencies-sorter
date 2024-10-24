@@ -1,6 +1,7 @@
 package com.squareup.sort.groovy
 
 import com.autonomousapps.grammar.gradle.GradleScript.DependencyContext
+import com.autonomousapps.grammar.gradle.GradleScript.EnforcedPlatformDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.NormalDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.PlatformDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.QuoteContext
@@ -20,7 +21,11 @@ internal class GroovyDependencyDeclaration(
 ) : DependencyDeclaration {
 
   enum class DeclarationKind {
-    NORMAL, PLATFORM, TEST_FIXTURES
+    NORMAL,
+    ENFORCED_PLATFORM,
+    PLATFORM,
+    TEST_FIXTURES,
+    ;
   }
 
   enum class DependencyKind {
@@ -44,6 +49,7 @@ internal class GroovyDependencyDeclaration(
     throw UnsupportedOperationException("Use precedingComment() instead")
   }
 
+  override fun isEnforcedPlatformDeclaration() = declarationKind == DeclarationKind.ENFORCED_PLATFORM
   override fun isPlatformDeclaration() = declarationKind == DeclarationKind.PLATFORM
   override fun isTestFixturesDeclaration() = declarationKind == DeclarationKind.TEST_FIXTURES
 
@@ -79,6 +85,7 @@ internal class GroovyDependencyDeclaration(
     fun of(declaration: ParserRuleContext, filePath: String): GroovyDependencyDeclaration {
       val (dependency, declarationKind) = when (declaration) {
         is NormalDeclarationContext -> declaration.dependency() to DeclarationKind.NORMAL
+        is EnforcedPlatformDeclarationContext -> declaration.dependency() to DeclarationKind.ENFORCED_PLATFORM
         is PlatformDeclarationContext -> declaration.dependency() to DeclarationKind.PLATFORM
         is TestFixturesDeclarationContext -> declaration.dependency() to DeclarationKind.TEST_FIXTURES
         else -> error("Unknown declaration kind. Was ${declaration.text}.")
@@ -86,6 +93,7 @@ internal class GroovyDependencyDeclaration(
 
       val dependencyKind = when (declaration) {
         is NormalDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
+        is EnforcedPlatformDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
         is PlatformDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
         is TestFixturesDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
         else -> error("Unknown declaration kind. Was ${declaration.text}.")

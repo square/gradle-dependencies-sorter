@@ -6,6 +6,13 @@ internal class DependencyComparator : Comparator<DependencyDeclaration> {
     left: DependencyDeclaration,
     right: DependencyDeclaration,
   ): Int {
+    if (left.isEnforcedPlatformDeclaration() && right.isEnforcedPlatformDeclaration()) return compareDeclaration(
+      left,
+      right
+    )
+    if (left.isEnforcedPlatformDeclaration()) return -1
+    if (right.isEnforcedPlatformDeclaration()) return 1
+
     if (left.isPlatformDeclaration() && right.isPlatformDeclaration()) return compareDeclaration(
       left,
       right

@@ -128,6 +128,7 @@ final class GroovySorterSpec extends Specification {
             api gradleApi()
             implementation testFixtures(libs.magic)
             implementation platform(project(':platform'))
+            implementation enforcedPlatform(libs.bigBom)
           }'''.stripIndent())
     def sorter = GroovySorter.of(buildScript)
 
@@ -138,6 +139,7 @@ final class GroovySorterSpec extends Specification {
             api project(':marvin')
             api gradleApi()
 
+            implementation enforcedPlatform(libs.bigBom)
             implementation platform(project(':platform'))
             implementation testFixtures(libs.magic)
             implementation 'heart:of-gold:1.0'

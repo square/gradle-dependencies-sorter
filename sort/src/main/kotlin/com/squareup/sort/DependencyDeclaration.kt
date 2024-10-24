@@ -5,6 +5,7 @@ internal interface DependencyDeclaration {
   fun fullText(): String
   fun precedingComment(): String?
 
+  fun isEnforcedPlatformDeclaration(): Boolean
   fun isPlatformDeclaration(): Boolean
   fun isTestFixturesDeclaration(): Boolean
 

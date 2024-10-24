@@ -3,6 +3,7 @@ package com.squareup.sort.groovy
 import com.autonomousapps.grammar.gradle.GradleScript
 import com.autonomousapps.grammar.gradle.GradleScript.BuildscriptContext
 import com.autonomousapps.grammar.gradle.GradleScript.DependenciesContext
+import com.autonomousapps.grammar.gradle.GradleScript.EnforcedPlatformDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.NormalDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.PlatformDeclarationContext
 import com.autonomousapps.grammar.gradle.GradleScript.TestFixturesDeclarationContext
@@ -111,6 +112,14 @@ public class GroovySorter private constructor(
   }
 
   override fun enterNormalDeclaration(ctx: NormalDeclarationContext) {
+    if (isInBuildScriptBlock) return
+    collectDependency(
+      tokens.getText(ctx.configuration()),
+      GroovyDependencyDeclaration.of(ctx, filePath)
+    )
+  }
+
+  override fun enterEnforcedPlatformDeclaration(ctx: EnforcedPlatformDeclarationContext) {
     if (isInBuildScriptBlock) return
     collectDependency(
       tokens.getText(ctx.configuration()),
