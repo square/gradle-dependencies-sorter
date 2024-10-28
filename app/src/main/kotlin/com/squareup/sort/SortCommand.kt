@@ -29,7 +29,6 @@ import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
 
-
 /** Parent command or entry point into the dependencies-sorter. */
 class SortCommand(
   private val fileSystem: FileSystem = FileSystems.getDefault(),
