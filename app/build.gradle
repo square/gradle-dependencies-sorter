@@ -71,3 +71,7 @@ def javaComponent = components['java'] as AdhocComponentWithVariants
     skip()
   }
 }
+
+processResources {
+  expand(Map.of("VERSION", providers.gradleProperty("VERSION_NAME").get()))
+}
