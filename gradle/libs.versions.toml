@@ -1,4 +1,6 @@
 [versions]
+antlr = "4.10.1"
+buildconfig = "5.5.1"
 dagp = "2.6.1"
 # java is referenced from build-logic
 java = "11"
@@ -35,3 +37,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 dagp = { id = "com.autonomousapps.dependency-analysis", version.ref = "dagp" }
 dokka = { id = "org.jetbrains.dokka", version = "1.9.20" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }

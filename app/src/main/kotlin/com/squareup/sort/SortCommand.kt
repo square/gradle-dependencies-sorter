@@ -9,8 +9,10 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.path
+import com.squareup.app.BuildConfig
 import com.squareup.log.DelegatingLogger
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
@@ -23,6 +25,7 @@ import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.util.Properties
 import kotlin.io.path.createTempFile
 import kotlin.io.path.pathString
 import kotlin.io.path.writeText
@@ -46,6 +49,8 @@ class SortCommand(
         )
       }
     }
+
+    versionOption(BuildConfig.VERSION)
   }
 
   val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
