@@ -122,10 +122,10 @@ class SortCommand(
         logger.trace("Successfully sorted: ${file.pathString} ")
         successCount++
       } catch (e: BuildScriptParseException) {
-        logger.warn("Parsing error: ${file.pathString} \n${e.localizedMessage}")
+        logger.error("Parsing error: ${file.pathString} \n${e.localizedMessage}")
         parseErrorCount++
       } catch (e: IllegalStateException) {
-        logger.warn("Parsing error: ${file.pathString} \n${e.localizedMessage}")
+        logger.error("Parsing error: ${file.pathString} \n${e.localizedMessage}")
         parseErrorCount++
       } catch (_: AlreadyOrderedException) {
         logger.trace("Already ordered: ${file.pathString} ")
@@ -170,11 +170,11 @@ class SortCommand(
         }
         if (sorter.hasParseErrors()) {
           val error = checkNotNull(sorter.getParseError()) { "There must be a parse error." }
-          logger.trace("Parsing error: ${file.pathString} \n${error.localizedMessage}")
+          logger.error("Parsing error: ${file.pathString} \n${error.localizedMessage}")
           parseErrorCount++
         }
       } catch (t: Throwable) {
-        logger.trace("Parsing error: ${file.pathString}")
+        logger.error("Parsing error: ${file.pathString}")
         parseErrorCount++
       }
     }
