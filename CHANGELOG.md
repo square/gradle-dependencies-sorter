@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.11
+* [Fix]: emit errors even when not in verbose mode.
+* [Fix]: update kotlin-editor for better parsing of dependency declarations.
+
 ## Version 0.10
 * [Feat]: support enforcedPlatform
 * [Fix]: bad version-checking logic was hiding check results.
