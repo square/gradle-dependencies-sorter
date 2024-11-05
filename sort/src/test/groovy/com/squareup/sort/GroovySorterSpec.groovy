@@ -3,6 +3,8 @@ package com.squareup.sort
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.groovy.GroovySorter
+import com.squareup.sort.kotlin.KotlinSorter
+import spock.lang.PendingFeature
 import spock.lang.Specification
 import spock.lang.TempDir
 
@@ -176,6 +178,46 @@ final class GroovySorterSpec extends Specification {
           testFixturesImplementation 'g:a:1'
 
           testImplementation 'g:e:1'
+        }'''.stripIndent()
+    )
+  }
+
+  // GroovySorter may never support complex syntax in a dependencies block
+  @PendingFeature
+  def "doesn't remove complex statements when sorting"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          implementation(libs.c)
+          api(libs.d)
+          testImplementation("g:e:1")
+
+          if (org.apache.tools.ant.taskdefs.condition.Os.isArch("aarch64")) {
+            // Multi-line comment about why we're
+            // doing this.
+            testImplementation("io.github.ganadist.sqlite4java:libsqlite4java-osx-aarch64:1.0.392")
+          }
+        }'''.stripIndent()
+    )
+    def sorter = KotlinSorter.of(buildScript)
+
+    expect:
+    assertThat(sorter.rewritten()).isEqualTo(
+      '''\
+        dependencies {
+          api(libs.d)
+
+          implementation(libs.c)
+
+          testImplementation("g:e:1")
+
+          if (org.apache.tools.ant.taskdefs.condition.Os.isArch("aarch64")) {
+            // Multi-line comment about why we're
+            // doing this.
+            testImplementation("io.github.ganadist.sqlite4java:libsqlite4java-osx-aarch64:1.0.392")
+          }
         }'''.stripIndent()
     )
   }

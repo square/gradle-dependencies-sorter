@@ -214,6 +214,52 @@ class KotlinSorterSpec extends Specification {
     )
   }
 
+  def "doesn't remove complex statements when sorting"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      '''\
+        dependencies {
+          val complex = "a:complex:$expression"
+
+          implementation(complex)
+          api(libs.d)
+          testImplementation("g:e:1")
+
+          add("extraImplementation", libs.a)
+
+          if (org.apache.tools.ant.taskdefs.condition.Os.isArch("aarch64")) {
+            // Multi-line comment about why we're
+            // doing this.
+            testImplementation("io.github.ganadist.sqlite4java:libsqlite4java-osx-aarch64:1.0.392")
+          }
+        }'''.stripIndent()
+    )
+    def sorter = KotlinSorter.of(buildScript)
+
+    expect:
+    assertThat(sorter.rewritten()).isEqualTo(
+      '''\
+        dependencies {
+          val complex = "a:complex:$expression"
+
+          if (org.apache.tools.ant.taskdefs.condition.Os.isArch("aarch64")) {
+            // Multi-line comment about why we're
+            // doing this.
+            testImplementation("io.github.ganadist.sqlite4java:libsqlite4java-osx-aarch64:1.0.392")
+          }
+
+          add("extraImplementation", libs.a)
+
+          api(libs.d)
+
+          implementation(complex)
+
+          testImplementation("g:e:1")
+        }'''.stripIndent()
+    )
+  }
+
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
