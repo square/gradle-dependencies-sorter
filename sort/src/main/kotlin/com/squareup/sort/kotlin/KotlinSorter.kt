@@ -4,9 +4,11 @@ import cash.grammar.kotlindsl.model.gradle.DependencyContainer
 import cash.grammar.kotlindsl.parse.Parser
 import cash.grammar.kotlindsl.utils.Blocks.isDependencies
 import cash.grammar.kotlindsl.utils.CollectingErrorListener
+import cash.grammar.kotlindsl.utils.Context.fullText
 import cash.grammar.kotlindsl.utils.DependencyExtractor
 import cash.grammar.kotlindsl.utils.Whitespace
 import com.squareup.cash.grammar.KotlinParser.NamedBlockContext
+import com.squareup.cash.grammar.KotlinParser.StatementContext
 import com.squareup.cash.grammar.KotlinParserBaseListener
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
@@ -18,7 +20,6 @@ import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.TokenStreamRewriter
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 
 public class KotlinSorter private constructor(
   private val input: CharStream,
@@ -36,10 +37,7 @@ public class KotlinSorter private constructor(
   )
 
   private val dependencyComparator = DependencyComparator()
-  private val mutableDependencies = MutableDependencies(
-    mutableMapOf(),
-    mutableListOf()
-  )
+  private val mutableDependencies = MutableDependencies()
   private val ordering = Ordering()
 
   private var level = 0
@@ -99,7 +97,8 @@ public class KotlinSorter private constructor(
 
   private fun collectDependencies(container: DependencyContainer) {
     val declarations = container.getDependencyDeclarations().map { KotlinDependencyDeclaration(it) }
-    mutableDependencies.nonDeclarations += container.getNonDeclarations()
+    mutableDependencies.expressions += container.getExpressions()
+    mutableDependencies.statements += container.getStatements()
 
     ordering.collectDependencies(declarations)
 
@@ -119,10 +118,26 @@ public class KotlinSorter private constructor(
 
     appendLine("dependencies {")
 
-    // not-easily-modelable elements
-    mutableDependencies.nonDeclarations.forEach {
+    /*
+     * not-easily-modelable elements
+     */
+
+    // An example of a statement, in this context, is an if-expression or property expression (declaration)
+    mutableDependencies.statements.forEach { stmt ->
       append(indent.repeat(level))
-      appendLine(it)
+      appendLine(stmt.fullText(input)!!)
+
+      didWrite = true
+    }
+
+    if (didWrite && mutableDependencies.expressions.isNotEmpty()) {
+      appendLine()
+    }
+
+    // An example of an expression, in this context, is a function call like `add("extraImplementation", "foo")`
+    mutableDependencies.expressions.forEach { expr ->
+      append(indent.repeat(level))
+      appendLine(expr)
 
       didWrite = true
     }
@@ -131,8 +146,9 @@ public class KotlinSorter private constructor(
       appendLine()
     }
 
-    // declarations
-    mutableDependencies.declarations().sortedWith(KotlinConfigurationComparator)
+    // straightforward declarations
+    mutableDependencies.declarations()
+      .sortedWith(KotlinConfigurationComparator)
       .forEachIndexed { i, entry ->
         if (i != 0) appendLine()
 
@@ -185,15 +201,17 @@ public class KotlinSorter private constructor(
 }
 
 private class MutableDependencies(
-  val dependenciesByConfiguration: MutableMap<String, MutableList<KotlinDependencyDeclaration>>,
-  val nonDeclarations: MutableList<String>,
+  val dependenciesByConfiguration: MutableMap<String, MutableList<KotlinDependencyDeclaration>> = mutableMapOf(),
+  val expressions: MutableList<String> = mutableListOf(),
+  val statements: MutableList<StatementContext> = mutableListOf(),
 ) {
 
   fun declarations() = dependenciesByConfiguration.entries
 
   fun clear() {
     dependenciesByConfiguration.clear()
-    nonDeclarations.clear()
+    expressions.clear()
+    statements.clear()
   }
 }
 
