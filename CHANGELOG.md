@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.12
+* [Fix]: update to latest kotlin-editor and don't delete complex statements in dependencies blocks.
+
 ## Version 0.11
 * [Fix]: emit errors even when not in verbose mode.
 * [Fix]: update kotlin-editor for better parsing of dependency declarations.
