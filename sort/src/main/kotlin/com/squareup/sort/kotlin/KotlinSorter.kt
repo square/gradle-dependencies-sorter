@@ -97,7 +97,6 @@ public class KotlinSorter private constructor(
 
   private fun collectDependencies(container: DependencyContainer) {
     val declarations = container.getDependencyDeclarations().map { KotlinDependencyDeclaration(it) }
-    mutableDependencies.expressions += container.getExpressions()
     mutableDependencies.statements += container.getStatements()
 
     ordering.collectDependencies(declarations)

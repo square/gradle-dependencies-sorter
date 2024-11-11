@@ -243,13 +243,12 @@ class KotlinSorterSpec extends Specification {
         dependencies {
           val complex = "a:complex:$expression"
 
+          add("extraImplementation", libs.a)
           if (org.apache.tools.ant.taskdefs.condition.Os.isArch("aarch64")) {
             // Multi-line comment about why we're
             // doing this.
             testImplementation("io.github.ganadist.sqlite4java:libsqlite4java-osx-aarch64:1.0.392")
           }
-
-          add("extraImplementation", libs.a)
 
           api(libs.d)
 
