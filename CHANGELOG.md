@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.13
+* [Fix]: update kotlin-editor to 0.10 and fix API breaking change.
+
 ## Version 0.12
 * [Fix]: update to latest kotlin-editor and don't delete complex statements in dependencies blocks.
 
