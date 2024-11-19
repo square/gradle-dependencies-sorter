@@ -50,10 +50,15 @@ abstract class SortDependenciesTask @Inject constructor(
   @get:Input
   abstract val verbose: Property<Boolean>
 
+  @get:Optional
+  @get:Input
+  abstract val insertBlankLines: Property<Boolean>
+
   @TaskAction fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
     val mode = mode.getOrElse("sort")
     val verbose = verbose.getOrElse(false)
+    val insertBlankLines = insertBlankLines.getOrElse(true)
 
     if (mode != "check" && mode != "sort") {
       throw InvalidUserDataException("Mode must be 'sort' or 'check'. Was '$mode'.")
@@ -82,6 +87,10 @@ abstract class SortDependenciesTask @Inject constructor(
             } else {
               add("--verbose")
             }
+          }
+
+          if (!insertBlankLines) {
+            add("--no-blank-lines")
           }
         }
       }

@@ -546,6 +546,42 @@ final class GroovySorterSpec extends Specification {
     )).inOrder()
   }
 
+  def "sort without inserting newlines between different configurations"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    Files.writeString(buildScript,
+      '''\
+          dependencies {
+            implementation(projects.foo)
+            implementation(projects.bar)
+            implementation(projects.foo)
+
+            api(projects.foo)
+            api(projects.bar)
+            api(projects.foo)
+          }
+        '''.stripIndent())
+
+    when:
+    def config = new Sorter.Config(false)
+    def newScript = GroovySorter.of(buildScript, config).rewritten()
+
+    then:
+    notThrown(BuildScriptParseException)
+
+    and:
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+          dependencies {
+            api(projects.bar)
+            api(projects.foo)
+            implementation(projects.bar)
+            implementation(projects.foo)
+          }
+        '''.stripIndent()
+    )).inOrder()
+  }
+
   def "sort add function call in dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle')

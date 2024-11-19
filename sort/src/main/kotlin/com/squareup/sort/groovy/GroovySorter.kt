@@ -33,6 +33,7 @@ public class GroovySorter private constructor(
   private val rewriter: TokenStreamRewriter,
   private val errorListener: RewriterErrorListener,
   private val filePath: String,
+  private val config: Sorter.Config,
 ) : Sorter, GradleScriptBaseListener() {
 
   // We use a default of two spaces, but update it at most once later on.
@@ -157,7 +158,9 @@ public class GroovySorter private constructor(
     appendLine("dependencies {")
     dependenciesByConfiguration.entries.sortedWith(GroovyConfigurationComparator)
       .forEachIndexed { i, entry ->
-        if (i != 0) appendLine()
+        // Place a blank line between chunks of the same configuration, if configured
+        if (i != 0 && config.insertBlankLines) appendLine()
+
         entry.value.sortedWith(dependencyComparator)
           .map { dependency ->
             dependency to Texts(
@@ -193,7 +196,8 @@ public class GroovySorter private constructor(
 
   public companion object {
     @JvmStatic
-    public fun of(file: Path): GroovySorter {
+    @JvmOverloads
+    public fun of(file: Path, config: Sorter.Config = Sorter.defaultConfig()): GroovySorter {
       val input = Files.newInputStream(file, StandardOpenOption.READ).use {
         CharStreams.fromStream(it)
       }
@@ -214,7 +218,8 @@ public class GroovySorter private constructor(
         tokens = tokens,
         rewriter = TokenStreamRewriter(tokens),
         errorListener = errorListener,
-        filePath = file.absolutePathString()
+        filePath = file.absolutePathString(),
+        config = config,
       )
       val tree = parser.script()
       walker.walk(listener, tree)

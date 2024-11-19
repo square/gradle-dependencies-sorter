@@ -255,6 +255,116 @@ final class FunctionalSpec extends Specification {
     build(dir, 'sortDependencies', '--verbose')
   }
 
+  def "no blank lines between different configurations when flag is disabled"() {
+    given: 'A build script with unsorted dependencies and multiple configurations'
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      """\
+        plugins {
+          `java-library`
+          id("com.squareup.sort-dependencies")
+        }
+
+        sortDependencies {
+          insertBlankLines = false
+        }
+
+        repositories {
+          mavenCentral()
+          maven { url = uri("$REPO") }
+        }
+
+        dependencies {
+          implementation("com.squareup.okio:okio:3.2.0")
+          api("com.squareup.okhttp3:okhttp:4.10.0")
+          testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+        }
+      """.stripIndent()
+    )
+
+    when: 'We sort dependencies in the build folder'
+    build(dir, 'sortDependencies')
+
+    then: 'The build script is sorted with no blank lines between api and implementation'
+    buildScript.text == """\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      sortDependencies {
+        insertBlankLines = false
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url = uri("$REPO") }
+      }
+
+      dependencies {
+        api("com.squareup.okhttp3:okhttp:4.10.0")
+        implementation("com.squareup.okio:okio:3.2.0")
+        testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+      }
+    """.stripIndent()
+  }
+
+  def "insert blank lines between different configurations when flag is enabled"() {
+    given: 'A build script with unsorted dependencies and multiple configurations'
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript,
+      """\
+        plugins {
+          `java-library`
+          id("com.squareup.sort-dependencies")
+        }
+
+        sortDependencies {
+          insertBlankLines = true
+        }
+
+        repositories {
+          mavenCentral()
+          maven { url = uri("$REPO") }
+        }
+
+        dependencies {
+          implementation("com.squareup.okio:okio:3.2.0")
+          api("com.squareup.okhttp3:okhttp:4.10.0")
+          testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+        }
+      """.stripIndent()
+    )
+
+    when: 'We sort dependencies in the build folder'
+    build(dir, 'sortDependencies')
+
+    then: 'The build script is sorted with a blank line between api and implementation'
+    buildScript.text == """\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      sortDependencies {
+        insertBlankLines = true
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url = uri("$REPO") }
+      }
+
+      dependencies {
+        api("com.squareup.okhttp3:okhttp:4.10.0")
+
+        implementation("com.squareup.okio:okio:3.2.0")
+
+        testImplementation(platform("com.squareup.okhttp3:okhttp-bom:4.10.0"))
+      }
+    """.stripIndent()
+  }
+
   private static final BUILD_SCRIPT = """\
     plugins {
       id 'java-library'

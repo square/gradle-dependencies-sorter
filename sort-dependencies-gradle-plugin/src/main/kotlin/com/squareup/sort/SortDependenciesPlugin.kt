@@ -27,10 +27,10 @@ class SortDependenciesPlugin : Plugin<Project> {
     }
 
     tasks.register("sortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("sort", target, sortApp)
+      t.configure("sort", target, sortApp, extension)
     }
     val checkTask = tasks.register("checkSortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure("check", target, sortApp)
+      t.configure("check", target, sortApp, extension)
     }
 
     afterEvaluate {
@@ -48,11 +48,13 @@ class SortDependenciesPlugin : Plugin<Project> {
   private fun SortDependenciesTask.configure(
     mode: String,
     project: Project,
-    sortApp: Configuration
+    sortApp: Configuration,
+    extension: SortDependenciesExtension,
   ) {
     buildScript.set(project.buildFile)
     sortProgram.setFrom(sortApp)
     version.set(extension.version)
     this.mode.set(mode)
+    insertBlankLines.set(extension.insertBlankLines)
   }
 }
