@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.14
+* [chore]: bump dependencies. Specifically antlr-related ones.
+* [chore]: use newer version of Shadow, eliminate Gradle deprecations.
+
 ## Version 0.13
 * [Fix]: update kotlin-editor to 0.10 and fix API breaking change.
 
