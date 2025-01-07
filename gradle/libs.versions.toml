@@ -1,6 +1,6 @@
 [versions]
-antlr = "4.10.1"
 dagp = "1.30.0"
+# java is referenced from build-logic
 java = "11"
 junit5 = "5.7.2"
 kotlin = "1.9.24"
@@ -11,12 +11,9 @@ retrofit = "2.9.0"
 shadow = "8.1.0"
 
 [libraries]
-antlr-core = { module = "org.antlr:antlr4", version.ref = "antlr" }
-antlr-runtime = { module = "org.antlr:antlr4-runtime", version.ref = "antlr" }
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
 grammar = "com.autonomousapps:gradle-script-grammar:0.4"
 kotlinEditor-core = { module = "app.cash.kotlin-editor:core", version.ref = "kotlinEditor" }
-kotlinEditor-grammar = { module = "app.cash.kotlin-editor:grammar", version.ref = "kotlinEditor" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
@@ -27,6 +24,7 @@ shadow-gradle-plugin = { module = "com.github.johnrengelman:shadow", version.ref
 maven-publish-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublish" }
 slf4j = "org.slf4j:slf4j-simple:2.0.5"
 
+# junit-api, junit-engine, and truth are all referenced from build-logic
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 spock = "org.spockframework:spock-core:2.1-groovy-3.0"
