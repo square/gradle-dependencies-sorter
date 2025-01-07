@@ -19,7 +19,7 @@ class AppConvention : Plugin<Project> {
     with(pluginManager) {
       apply(BaseConvention::class.java)
       apply("application")
-      apply("com.github.johnrengelman.shadow")
+      apply("com.gradleup.shadow")
     }
 
     Publishing.setup(this)
