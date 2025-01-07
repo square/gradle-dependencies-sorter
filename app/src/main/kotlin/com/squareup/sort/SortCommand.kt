@@ -62,6 +62,11 @@ class SortCommand(
     help = "Flag to control whether file tree walking looks in build and hidden directories. True by default.",
   ).flag("--no-skip-hidden-and-build-dirs", default = true)
 
+  private val noBlankLines by option(
+    "--no-blank-lines",
+    help = "When enabled, blank lines will not be inserted between different dependency configurations. False by default",
+  ).flag(default = false)
+
   val mode by option(
     "-m", "--mode",
     help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted."
@@ -115,9 +120,12 @@ class SortCommand(
     var successCount = 0
     var parseErrorCount = 0
     var alreadySortedCount = 0
+    val insertBlankLines = !noBlankLines
+    val config = Sorter.Config(insertBlankLines = insertBlankLines)
+
     filesToSort.parallelStream().forEach { file ->
       try {
-        val newContent = Sorter.of(file).rewritten()
+        val newContent = Sorter.of(file, config).rewritten()
         file.writeText(newContent, Charsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING)
         logger.trace("Successfully sorted: ${file.pathString} ")
         successCount++
@@ -156,10 +164,12 @@ class SortCommand(
     val notSorted = mutableListOf<Path>()
     var parseErrorCount = 0
     var alreadySortedCount = 0
+    val insertBlankLines = !noBlankLines
+    val config = Sorter.Config(insertBlankLines = insertBlankLines)
 
     filesToSort.parallelStream().forEach { file ->
       try {
-        val sorter = Sorter.of(file)
+        val sorter = Sorter.of(file, config)
         if (!sorter.isSorted() && !sorter.hasParseErrors()) {
           logger.trace("Not ordered: ${file.pathString} ")
           notSorted.add(file)
