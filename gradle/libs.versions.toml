@@ -8,7 +8,7 @@ kotlinEditor = "0.18"
 mavenPublish = "0.30.0"
 moshi = "1.14.0"
 retrofit = "2.9.0"
-shadow = "8.1.0"
+shadow = "8.3.5"
 
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
@@ -20,7 +20,7 @@ moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "retrofit" }
-shadow-gradle-plugin = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
+shadow-gradle-plugin = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
 maven-publish-plugin = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "mavenPublish" }
 slf4j = "org.slf4j:slf4j-simple:2.0.5"
 
