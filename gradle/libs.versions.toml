@@ -1,18 +1,18 @@
 [versions]
-dagp = "1.30.0"
+dagp = "2.6.1"
 # java is referenced from build-logic
 java = "11"
-junit5 = "5.7.2"
-kotlin = "1.9.24"
-kotlinEditor = "0.10"
-mavenPublish = "0.28.0"
+junit5 = "5.11.4"
+kotlin = "1.9.25"
+kotlinEditor = "0.18"
+mavenPublish = "0.30.0"
 moshi = "1.14.0"
 retrofit = "2.9.0"
 shadow = "8.1.0"
 
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
-grammar = "com.autonomousapps:gradle-script-grammar:0.4"
+grammar = "com.autonomousapps:gradle-script-grammar:0.5"
 kotlinEditor-core = { module = "app.cash.kotlin-editor:core", version.ref = "kotlinEditor" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
