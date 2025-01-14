@@ -12,6 +12,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.path
+import com.squareup.app.BuildConfig
 import com.squareup.log.DelegatingLogger
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
@@ -49,7 +50,7 @@ class SortCommand(
       }
     }
 
-    versionOption(getVersion())
+    versionOption(BuildConfig.VERSION)
   }
 
   val paths: List<Path> by argument(help = "Path(s) to sort. Required.")
@@ -258,13 +259,4 @@ private fun logger(quiet: Boolean): DelegatingLogger {
     file = createTempFile(),
     quiet = quiet,
   )
-}
-
-private fun getVersion(): String {
-  val properties = Properties()
-  val classLoader = Thread.currentThread().contextClassLoader
-  classLoader.getResourceAsStream("appinfo.properties")?.use {
-    properties.load(it)
-  } ?: throw IllegalStateException("Could not find appinfo.properties in resources")
-  return properties.getProperty("app.version") ?: "Unknown version"
 }
