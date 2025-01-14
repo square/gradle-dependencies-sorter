@@ -2,7 +2,7 @@
 antlr = "4.10.1"
 buildconfig = "5.5.1"
 dagp = "1.30.0"
-java = "17"
+java = "11"
 junit5 = "5.7.2"
 kotlin = "1.9.24"
 kotlinEditor = "0.6"
