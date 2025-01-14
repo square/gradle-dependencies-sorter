@@ -1,10 +1,10 @@
 package com.squareup.sort
 
 import cash.grammar.kotlindsl.model.DependencyDeclaration.Capability
+import cash.grammar.kotlindsl.model.DependencyDeclaration.Identifier
 import cash.grammar.kotlindsl.model.DependencyDeclaration.Type
 import com.squareup.sort.kotlin.KotlinDependencyDeclaration
 import spock.lang.Specification
-import cash.grammar.kotlindsl.model.DependencyDeclaration.Identifier
 
 class DependencyComparatorTest extends Specification {
 
@@ -15,7 +15,8 @@ class DependencyComparatorTest extends Specification {
       moduleDependency('implementation', '"b:1.0"', 'implementation("b:1.0")'),
       moduleDependency('implementation', '"a:1.0"', 'implementation("a:1.0")'),
       moduleDependency('implementation', 'deps.foo', 'implementation(deps.foo)'),
-      moduleDependency('implementation', 'deps.bar', 'implementation(deps.bar)', '  /*\n   * Here\'s a multiline comment.\n   */'),
+      moduleDependency('implementation', 'deps.bar', 'implementation(deps.bar)',
+        '  /*\n   * Here\'s a multiline comment.\n   */'),
       projectDependency('implementation', '":milliways"', 'implementation(project(":milliways"))'),
     ]
 
@@ -44,7 +45,11 @@ class DependencyComparatorTest extends Specification {
       capability,
       Type.MODULE,
       fullText,
-      comment
+      null, // producerConfiguration
+      null, // classifier
+      null, // ext
+      comment, // precedingComment
+      false, // isComplex
     )
 
     return new KotlinDependencyDeclaration(base)
@@ -63,7 +68,11 @@ class DependencyComparatorTest extends Specification {
       capability,
       Type.PROJECT,
       fullText,
-      comment
+      null, // producerConfiguration
+      null, // classifier
+      null, // ext
+      comment, // precedingComment
+      false, // isComplex
     )
 
     return new KotlinDependencyDeclaration(base)
