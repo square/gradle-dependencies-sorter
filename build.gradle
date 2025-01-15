@@ -1,13 +1,3 @@
-buildscript {
-  dependencies {
-    // Need to force kotlinpoet:1.16.0 as that is what buildconfig uses.
-    // CMP 1.6.0-x uses kotlinpoet:1.14.x. Gradle seems to force 1.14.x which then breaks
-    // buildconfig.
-    // https://github.com/gmazzo/gradle-buildconfig-plugin/issues/131
-    classpath("com.squareup:kotlinpoet:1.16.0")
-  }
-}
-
 plugins {
   // This plugin should be loaded in a single classloader.
   alias(libs.plugins.kotlin.jvm) apply false
