@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
   id 'com.squareup.app'
   alias(libs.plugins.mavenPublish)
+  alias(libs.plugins.buildconfig)
 }
 
 application {
@@ -70,4 +71,8 @@ def javaComponent = components['java'] as AdhocComponentWithVariants
   javaComponent.withVariantsFromConfiguration(configurations[unpublishable]) {
     skip()
   }
+}
+
+buildConfig {
+  buildConfigField("String", "VERSION", "\"${project.property("VERSION_NAME")}\"")
 }
