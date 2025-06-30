@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.15
+* [New] Add support for regex matching build files in a module
+
 ## Version 0.14
 * [chore]: bump dependencies. Specifically antlr-related ones.
 * [chore]: use newer version of Shadow, eliminate Gradle deprecations.
