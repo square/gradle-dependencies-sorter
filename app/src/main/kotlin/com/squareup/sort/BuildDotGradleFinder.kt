@@ -14,6 +14,7 @@ class BuildDotGradleFinder(
   private val root: Path,
   searchPaths: List<Path>,
   skipHiddenAndBuildDirs: Boolean,
+  buildFileRegex: String,
 ) {
 
   /**
@@ -49,7 +50,7 @@ class BuildDotGradleFinder(
     // nb, if the path passed to the resolve method is already an absolute path, it returns that.
     .map { root.resolve(it).normalize() }
     .flatMap { searchPath ->
-      if (searchPath.isBuildDotGradle()) {
+      if (searchPath.isModuleBuildFile(buildFileRegex)) {
         sequenceOf(searchPath).filter(Path::exists)
       } else {
         // Use File.walk() so we have access to the `onEnter` filter.
@@ -59,7 +60,9 @@ class BuildDotGradleFinder(
             skipBuildAndCacheDirs()
           }
         }
-          .filter(Path::isBuildDotGradle)
+          .filter {
+            it.isModuleBuildFile(buildFileRegex)
+          }
           .filter(Path::exists)
       }
     }
@@ -70,17 +73,22 @@ class BuildDotGradleFinder(
       root: Path,
       searchPaths: List<Path>,
       skipHiddenAndBuildDirs: Boolean,
-    ): BuildDotGradleFinder = BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs)
+      buildFileRegex: String,
+    ): BuildDotGradleFinder = BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs, buildFileRegex)
 
     object Default : Factory {
-      override fun of(root: Path, searchPaths: List<Path>, skipHiddenAndBuildDirs: Boolean): BuildDotGradleFinder {
-        return BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs)
+      override fun of(root: Path, searchPaths: List<Path>, skipHiddenAndBuildDirs: Boolean, buildFileRegex: String): BuildDotGradleFinder {
+        return BuildDotGradleFinder(root, searchPaths, skipHiddenAndBuildDirs, buildFileRegex)
       }
     }
   }
 }
 
-private fun Path.isBuildDotGradle(): Boolean {
+private fun Path.isModuleBuildFile(buildFileRegex: String): Boolean {
   val filename = fileName.pathString
-  return filename == "build.gradle" || filename == "build.gradle.kts"
+  return if(buildFileRegex.isNotEmpty()) {
+    filename.matches(buildFileRegex.toRegex())
+  } else {
+    filename == "build.gradle" || filename == "build.gradle.kts"
+  }
 }

@@ -7,7 +7,7 @@ import java.nio.file.Path
 
 import static com.google.common.truth.Truth.assertThat
 
-class BuildDotGradleFinderTest extends Specification {
+class CustomBuildDotGradleNameFinderTest extends Specification {
 
     @TempDir
     private Path dir
@@ -15,16 +15,16 @@ class BuildDotGradleFinderTest extends Specification {
     def setup() {
         dir.resolve("build.gradle.kts").toFile().createNewFile()
         dir.resolve("app").toFile().mkdirs()
-        dir.resolve("app/build.gradle").toFile().createNewFile()
+        dir.resolve("app/app.gradle.kts").toFile().createNewFile()
     }
 
-    def "can find build script files inside current directory"() {
+    def "can find build script files inside current directory when named after module"() {
         given: 'A BuildDotGradleFinder using the current directory'
         def finder = new BuildDotGradleFinder(
                 /*path = */ dir,
                 /*searchPaths =*/ [dir],
                 /*skipHiddenAndBuildDirs = */ true,
-                /*buildFileRegex = */ "",
+                /*buildFileRegex = */ ".*.kts",
         )
 
         when: 'Searching for Gradle build files'
@@ -33,7 +33,7 @@ class BuildDotGradleFinderTest extends Specification {
         then: 'Gradle build files are found'
         assertThat(results).containsExactly(
                 dir.resolve("build.gradle.kts"),
-                dir.resolve("app/build.gradle")
+                dir.resolve("app/app.gradle.kts")
         )
     }
 
