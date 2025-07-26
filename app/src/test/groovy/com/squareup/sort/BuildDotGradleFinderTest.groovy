@@ -24,7 +24,6 @@ class BuildDotGradleFinderTest extends Specification {
                 /*path = */ dir,
                 /*searchPaths =*/ [dir],
                 /*skipHiddenAndBuildDirs = */ true,
-                /*buildFileRegex = */ "",
         )
 
         when: 'Searching for Gradle build files'

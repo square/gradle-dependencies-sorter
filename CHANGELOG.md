@@ -1,7 +1,7 @@
 # gradle-dependencies-sorter
 
-## Version 0.15
-* [New] Add support for regex matching build files in a module
+## Version 0.15 (unreleased)
+* [Feat] match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`
 
 ## Version 0.14
 * [chore]: bump dependencies. Specifically antlr-related ones.

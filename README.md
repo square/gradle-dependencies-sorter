@@ -65,9 +65,6 @@ sortDependencies {
   // When true, a blank line will be inserted between dependencies of different configurations. Enabled by default.
   insertBlankLines = false
 
-  // When enabled, allows matching for arbitrary build files for a module. Matches `build.gradle` / `build.gradle.kts`
-  buildFileRegex = ".*.kts"
-
   // true by default, meaning that 'checkSortDependencies' is a dependency of 'check'
   check(true)
 }
