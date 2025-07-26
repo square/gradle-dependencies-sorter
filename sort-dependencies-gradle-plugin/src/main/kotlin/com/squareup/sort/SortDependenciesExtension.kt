@@ -11,6 +11,9 @@ import javax.inject.Inject
  *   // Defines a custom version of the SortDependencies CLI to use
  *   version.set(/* custom version */)
  *
+ *   // When true, a blank line will be inserted between dependencies of different configurations. Enabled by default.
+ *   insertBlankLines = false
+ *
  *   // true by default, meaning that 'checkSortDependencies' is a dependency of 'check'
  *   check(true)
  * }

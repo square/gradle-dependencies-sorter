@@ -9,6 +9,8 @@ import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.io.path.visitFileTree
 
+private val BUILD_FILE_REGEX: Regex = "^.*\\.gradle(\\.kts)?$".toRegex()
+
 @OptIn(ExperimentalPathApi::class)
 class BuildDotGradleFinder(
   private val root: Path,
@@ -49,7 +51,7 @@ class BuildDotGradleFinder(
     // nb, if the path passed to the resolve method is already an absolute path, it returns that.
     .map { root.resolve(it).normalize() }
     .flatMap { searchPath ->
-      if (searchPath.isBuildDotGradle()) {
+      if (searchPath.isModuleBuildFile()) {
         sequenceOf(searchPath).filter(Path::exists)
       } else {
         // Use File.walk() so we have access to the `onEnter` filter.
@@ -59,7 +61,7 @@ class BuildDotGradleFinder(
             skipBuildAndCacheDirs()
           }
         }
-          .filter(Path::isBuildDotGradle)
+          .filter(Path::isModuleBuildFile)
           .filter(Path::exists)
       }
     }
@@ -80,7 +82,7 @@ class BuildDotGradleFinder(
   }
 }
 
-private fun Path.isBuildDotGradle(): Boolean {
+private fun Path.isModuleBuildFile(): Boolean {
   val filename = fileName.pathString
-  return filename == "build.gradle" || filename == "build.gradle.kts"
+  return filename.matches(BUILD_FILE_REGEX)
 }

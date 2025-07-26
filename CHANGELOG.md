@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.15 (unreleased)
+* [Feat] match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`
+
 ## Version 0.14
 * [chore]: bump dependencies. Specifically antlr-related ones.
 * [chore]: use newer version of Shadow, eliminate Gradle deprecations.
