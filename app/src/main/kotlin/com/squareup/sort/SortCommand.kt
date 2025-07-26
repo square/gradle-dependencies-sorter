@@ -72,11 +72,6 @@ class SortCommand(
     help = "When enabled, blank lines will not be inserted between different dependency configurations. False by default",
   ).flag(default = false)
 
-  private val buildFileRegex by option(
-    "--build-file-regex",
-    help = "When enabled, allows matching for arbitrary build files for a module. Matches `build.gradle` / `build.gradle.kts`",
-  ).default("")
-
   val mode by option(
     "-m", "--mode",
     help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted."
@@ -100,8 +95,7 @@ class SortCommand(
     val filesToSort = buildFileFinder.of(
       root = pwd,
       searchPaths = paths,
-      skipHiddenAndBuildDirs = skipHiddenAndBuildDirs,
-      buildFileRegex = buildFileRegex
+      skipHiddenAndBuildDirs = skipHiddenAndBuildDirs
     ).buildDotGradles
     val findFileTime = System.currentTimeMillis()
 

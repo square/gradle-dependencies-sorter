@@ -24,7 +24,6 @@ class CustomBuildDotGradleNameFinderTest extends Specification {
                 /*path = */ dir,
                 /*searchPaths =*/ [dir],
                 /*skipHiddenAndBuildDirs = */ true,
-                /*buildFileRegex = */ ".*.kts",
         )
 
         when: 'Searching for Gradle build files'

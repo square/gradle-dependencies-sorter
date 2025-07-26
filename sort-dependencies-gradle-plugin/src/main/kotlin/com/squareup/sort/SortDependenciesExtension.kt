@@ -14,9 +14,6 @@ import javax.inject.Inject
  *   // When true, a blank line will be inserted between dependencies of different configurations. Enabled by default.
  *   insertBlankLines = false
  *
- *   // When enabled, allows matching for arbitrary build files for a module. Matches `build.gradle` / `build.gradle.kts`
- *   buildFileRegex = ".*.kts"
- *
  *   // true by default, meaning that 'checkSortDependencies' is a dependency of 'check'
  *   check(true)
  * }
@@ -33,10 +30,6 @@ abstract class SortDependenciesExtension @Inject constructor(
         ?.use(BufferedReader::readLine)
         ?: error("Can't find '$VERSION_FILENAME'")
     )
-
-  /** Defines a regex of the SortDependencies CLI to use. */
-  val buildFileRegex: Property<String> = objects.property(String::class.java)
-    .convention("")
 
   /**
    * When true, a blank line will be inserted between dependencies of different configurations

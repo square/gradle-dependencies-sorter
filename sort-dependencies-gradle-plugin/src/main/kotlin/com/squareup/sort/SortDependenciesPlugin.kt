@@ -56,6 +56,5 @@ class SortDependenciesPlugin : Plugin<Project> {
     version.set(extension.version)
     this.mode.set(mode)
     insertBlankLines.set(extension.insertBlankLines)
-    buildFileRegex.set(extension.buildFileRegex)
   }
 }
