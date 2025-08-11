@@ -8,6 +8,8 @@ import spock.lang.TempDir
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 import static com.google.common.truth.Truth.assertThat
 
@@ -19,8 +21,7 @@ class KotlinSorterSpec extends Specification {
   def "can sort build script"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           import foo
           import static bar;
 
@@ -64,10 +65,14 @@ class KotlinSorterSpec extends Specification {
           }
 
           println("hello, world")
-        '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           import foo
@@ -113,12 +118,15 @@ class KotlinSorterSpec extends Specification {
           println("hello, world")
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort build script with gradleApi() dep"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
+    def fileContent = normalize(
       '''\
           dependencies {
             implementation("heart:of-gold:1.0")
@@ -129,10 +137,14 @@ class KotlinSorterSpec extends Specification {
             implementation(testFixtures(libs.magic))
             implementation(platform(project(":platform")))
             implementation(enforcedPlatform(libs.bigBom))
-          }'''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+          }''',
+      lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -146,12 +158,15 @@ class KotlinSorterSpec extends Specification {
             implementation("sad:robot:1.0")
           }'''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort testFixtures correctly"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
+    def fileContent = normalize(
       '''\
         dependencies {
           testFixturesImplementation("g:a:1")
@@ -159,12 +174,16 @@ class KotlinSorterSpec extends Specification {
           implementation(libs.c)
           api(libs.d)
           testImplementation("g:e:1")
-        }'''.stripIndent()
+        }''',
+      lineSeparator
     )
-    def sorter = KotlinSorter.of(buildScript)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
-    assertThat(sorter.rewritten()).isEqualTo(
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           api(libs.d)
@@ -177,13 +196,16 @@ class KotlinSorterSpec extends Specification {
 
           testImplementation("g:e:1")
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort stringified configuration names correctly"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
+    def fileContent = normalize(
       '''\
         val functionalTest = configurations.getAt("functionalTest")
         dependencies {
@@ -192,12 +214,16 @@ class KotlinSorterSpec extends Specification {
           implementation(libs.c)
           api(libs.d)
           testImplementation("g:e:1")
-        }'''.stripIndent()
+        }''',
+      lineSeparator
     )
-    def sorter = KotlinSorter.of(buildScript)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
-    assertThat(sorter.rewritten()).isEqualTo(
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         val functionalTest = configurations.getAt("functionalTest")
         dependencies {
@@ -211,7 +237,10 @@ class KotlinSorterSpec extends Specification {
 
           "integrationTest"("integ:test:1.0")
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "doesn't remove complex statements when sorting"() {
@@ -235,10 +264,12 @@ class KotlinSorterSpec extends Specification {
           }
         }'''.stripIndent()
     )
-    def sorter = KotlinSorter.of(buildScript)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
-    assertThat(sorter.rewritten()).isEqualTo(
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           val complex = "a:complex:$expression"
@@ -256,14 +287,16 @@ class KotlinSorterSpec extends Specification {
 
           testImplementation("g:e:1")
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
               implementation("heart:of-gold:1.0")
               api(project(":marvin"))
@@ -286,10 +319,13 @@ class KotlinSorterSpec extends Specification {
               implementation(project(":milliways"))
               api("zzz:yyy:1.0")
           }
-        '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -314,21 +350,26 @@ class KotlinSorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "colons have higher precedence than hyphen"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           dependencies {
             api(project(":marvin-robot:so-sad"))
             api(project(":marvin:robot:so-sad"))
           }
-        '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -337,6 +378,9 @@ class KotlinSorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   // We have observed that, given the start "dependencies{" (no space), and a project dependency, the
@@ -345,21 +389,23 @@ class KotlinSorterSpec extends Specification {
   def "can sort a dependencies{ block"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           dependencies{
             api(project(":nu-metal"))
             api(project(":magic"))
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -368,13 +414,15 @@ class KotlinSorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "will not sort already sorted build script"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           import foo
           import static bar;
 
@@ -411,21 +459,25 @@ class KotlinSorterSpec extends Specification {
           }
 
           println("hello, world")
-        '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     when:
     sorter.rewritten()
 
     then:
     thrown(AlreadyOrderedException)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "sort can handle 'path:' notation"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
         dependencies {
           api(project(":path:path"))
           api(project(":zaphod"))
@@ -436,10 +488,13 @@ class KotlinSorterSpec extends Specification {
           api(project(path = ":trillian"))
           api(project(":eddie:eddie"))
         }
-      '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
@@ -453,22 +508,27 @@ class KotlinSorterSpec extends Specification {
         }
       '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "sort can handle 'files'-like notation"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
         dependencies {
           implementation(files("a.jar"))
           api(file("another.jar"))
           compileOnly(fileTree("libs") { include("*.jar") })
         }
-      '''.stripIndent())
-    def sorter = KotlinSorter.of(buildScript)
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
@@ -480,6 +540,9 @@ class KotlinSorterSpec extends Specification {
         }
       '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "a script without dependencies is already sorted"() {
@@ -514,8 +577,7 @@ class KotlinSorterSpec extends Specification {
   def "dedupe identical dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           dependencies {
             implementation(projects.foo)
             implementation(projects.bar)
@@ -525,15 +587,18 @@ class KotlinSorterSpec extends Specification {
             api(projects.bar)
             api(projects.foo)
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -545,13 +610,15 @@ class KotlinSorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "keep identical dependencies that have non-identical comments"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           dependencies {
             // Foo implementation
             implementation(projects.foo)
@@ -565,15 +632,18 @@ class KotlinSorterSpec extends Specification {
             // Foo api 2nd
             api(projects.foo)
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -589,6 +659,9 @@ class KotlinSorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "sort without inserting newlines between different configurations"() {
@@ -630,8 +703,7 @@ class KotlinSorterSpec extends Specification {
   def "sort add function call in dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
           dependencies {
             implementation(projects.foo)
             implementation(projects.bar)
@@ -642,15 +714,18 @@ class KotlinSorterSpec extends Specification {
             add("debugImplementation", projects.foo)
             add(releaseImplementation, projects.foo)
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf('''\
           dependencies {
             add("debugImplementation", projects.foo)
@@ -663,13 +738,15 @@ class KotlinSorterSpec extends Specification {
             implementation(projects.foo)
           }
         '''.stripIndent())).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort dependencies with artifact type specified"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      '''\
+    def fileContents = normalize('''\
         dependencies {
           implementation(projects.foo.internal)
           implementation(projects.bar.public)
@@ -682,14 +759,17 @@ class KotlinSorterSpec extends Specification {
           implementation(libs.common.view)
           implementation(projects.core)
         }
-      '''.stripIndent())
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
@@ -706,14 +786,16 @@ class KotlinSorterSpec extends Specification {
         }
       '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   // https://github.com/square/gradle-dependencies-sorter/issues/59
   def "can sort multiple semantically different dependencies blocks"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
-      """\
+    def fileContents = normalize("""\
       import app.cash.redwood.buildsupport.FlexboxHelpers
 
       apply(plugin = "com.android.library")
@@ -759,14 +841,16 @@ class KotlinSorterSpec extends Specification {
 
       android {
         namespace = "app.cash.redwood.layout.composeui"
-      }""".stripIndent()
-    )
+      }""", lineSeparator)
+    Files.writeString(buildScript, fileContents)
 
     when:
-    def newScript = KotlinSorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
-    assertThat(newScript).isEqualTo(
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       """\
       import app.cash.redwood.buildsupport.FlexboxHelpers
 
@@ -815,11 +899,27 @@ class KotlinSorterSpec extends Specification {
       android {
         namespace = "app.cash.redwood.layout.composeui"
       }""".stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   private static List<String> trimmedLinesOf(CharSequence content) {
     // to lines and trim whitespace off end
     return content.readLines().collect { it.replaceFirst('\\s+\$', '') }
+  }
+
+  private static CharSequence normalize(CharSequence input, String lineSeparator) {
+    return input.stripIndent().replace('\n', lineSeparator)
+  }
+
+  private static List<String> extractLineSeparators(CharSequence input) {
+    List<String> lineSeparators = new ArrayList<>()
+    Matcher matcher = Pattern.compile("(\\r\\n|\\r|\\n)").matcher(input)
+    while (matcher.find()) {
+      lineSeparators.add(matcher.group())
+    }
+    return lineSeparators
   }
 }
