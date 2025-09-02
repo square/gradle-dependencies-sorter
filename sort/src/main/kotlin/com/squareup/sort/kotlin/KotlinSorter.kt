@@ -190,7 +190,7 @@ public class KotlinSorter private constructor(
         file = Parser.readOnlyInputStream(file),
         errorListener = errorListener,
         startRule = { it.script() },
-        listenerFactory = { input, tokens, parser ->
+        listenerFactory = { input, tokens, _ ->
           KotlinSorter(
             input = input,
             tokens = tokens,
