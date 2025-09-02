@@ -12,6 +12,11 @@ permissions:
 
 jobs:
   publish:
+    env:
+      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_CENTRAL_USERNAME }}
+      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_KEY }}
+      ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SECRET_PASSPHRASE }}
     runs-on: ubuntu-latest
     if: github.repository == 'square/gradle-dependencies-sorter' && github.ref == 'refs/heads/main'
 
@@ -25,20 +30,11 @@ jobs:
           distribution: 'zulu'
           java-version: 11
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Run tests
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: 'check -s'
-        env:
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SECRET_PASSPHRASE }}
+        run: './gradlew check -s'
 
       - name: Publish artifacts
-        uses: gradle/gradle-build-action@v2
-        env:
-          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_CENTRAL_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SECRET_PASSPHRASE }}
-        with:
-          arguments: publishAllPublicationsToMavenCentralRepository --no-configuration-cache
+        run: './gradlew publishAllPublicationsToMavenCentralRepository -s --no-configuration-cache'
