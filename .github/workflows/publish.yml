@@ -28,7 +28,10 @@ jobs:
       - name: Run tests
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: check -s
+          arguments: 'check -s'
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SECRET_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SECRET_PASSPHRASE }}
 
       - name: Publish artifacts
         uses: gradle/gradle-build-action@v2
