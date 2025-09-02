@@ -1,7 +1,11 @@
 # gradle-dependencies-sorter
 
-## Version 0.15 (unreleased)
-* [Feat] match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`
+## Version 0.16 (unreleased)
+
+## Version 0.15
+* [Feat] match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`.
+* [Feat]: Add `--version` support.
+* [Chore] Migrate to Sonatype Central Portal.
 
 ## Version 0.14
 * [chore]: bump dependencies. Specifically antlr-related ones.
