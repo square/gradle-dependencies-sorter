@@ -10,6 +10,8 @@ import spock.lang.TempDir
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 import static com.google.common.truth.Truth.assertThat
 
@@ -21,8 +23,7 @@ final class GroovySorterSpec extends Specification {
   def "can sort build script"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           import foo
           import static bar;
 
@@ -66,10 +67,13 @@ final class GroovySorterSpec extends Specification {
           }
 
           println 'hello, world'
-        '''.stripIndent())
-    def sorter = GroovySorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           import foo
@@ -115,12 +119,15 @@ final class GroovySorterSpec extends Specification {
           println 'hello, world'
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort build script with gradleApi() dep"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
+    def fileContent = normalize(
       '''\
           dependencies {
             implementation 'heart:of-gold:1.0'
@@ -131,10 +138,15 @@ final class GroovySorterSpec extends Specification {
             implementation testFixtures(libs.magic)
             implementation platform(project(':platform'))
             implementation enforcedPlatform(libs.bigBom)
-          }'''.stripIndent())
-    def sorter = GroovySorter.of(buildScript)
+          }''',
+      lineSeparator
+    )
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -148,12 +160,15 @@ final class GroovySorterSpec extends Specification {
             implementation 'sad:robot:1.0'
           }'''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort testFixtures correctly"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
-    Files.writeString(buildScript,
+    def fileContent = normalize(
       '''\
         dependencies {
           testFixturesImplementation 'g:a:1'
@@ -161,12 +176,16 @@ final class GroovySorterSpec extends Specification {
           implementation libs.c
           api libs.d
           testImplementation 'g:e:1'
-        }'''.stripIndent()
+        }''',
+        lineSeparator
     )
-    def sorter = GroovySorter.of(buildScript)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
-    assertThat(sorter.rewritten()).isEqualTo(
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           api libs.d
@@ -179,7 +198,10 @@ final class GroovySorterSpec extends Specification {
 
           testImplementation 'g:e:1'
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   // GroovySorter may never support complex syntax in a dependencies block
@@ -225,8 +247,7 @@ final class GroovySorterSpec extends Specification {
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
               implementation 'heart:of-gold:1.0'
               api project(":marvin")
@@ -249,10 +270,13 @@ final class GroovySorterSpec extends Specification {
               implementation project(':milliways')
               api 'zzz:yyy:1.0'
           }
-        '''.stripIndent())
-    def sorter = GroovySorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -277,21 +301,26 @@ final class GroovySorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "colons have higher precedence than hyphen"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
             api project(":marvin-robot:so-sad")
             api project(":marvin:robot:so-sad")
           }
-        '''.stripIndent())
-    def sorter = GroovySorter.of(buildScript)
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -300,6 +329,9 @@ final class GroovySorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "single and double quotes are treated as equivalent"() {
@@ -327,21 +359,23 @@ final class GroovySorterSpec extends Specification {
   def "can sort a dependencies{ block"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies{
             api project(':nu-metal')
             api project(':magic')
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -350,13 +384,15 @@ final class GroovySorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "will not sort already sorted build script"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    Files.writeString(buildScript, '''\
           import foo
           import static bar;
 
@@ -406,8 +442,7 @@ final class GroovySorterSpec extends Specification {
   def "sort can handle 'path:' notation"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
         dependencies {
           api project(":path:path")
           api project(":zaphod")
@@ -418,10 +453,13 @@ final class GroovySorterSpec extends Specification {
           api project(":eddie:eddie")
           api project(path: ":trillian")
         }
-      '''.stripIndent())
-    def sorter = GroovySorter.of(buildScript)
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
 
     expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
@@ -435,6 +473,9 @@ final class GroovySorterSpec extends Specification {
         }
       '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "a script without dependencies is already sorted"() {
@@ -469,8 +510,7 @@ final class GroovySorterSpec extends Specification {
   def "dedupe identical dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
             implementation(projects.foo)
             implementation(projects.bar)
@@ -480,15 +520,18 @@ final class GroovySorterSpec extends Specification {
             api(projects.bar)
             api(projects.foo)
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -500,13 +543,15 @@ final class GroovySorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "keep identical dependencies that have non-identical comments"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
             // Foo implementation
             implementation(projects.foo)
@@ -520,15 +565,18 @@ final class GroovySorterSpec extends Specification {
             // Foo api 2nd
             api(projects.foo)
           }
-        '''.stripIndent())
+        ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
+    extractLineSeparators(newScript).every { it == lineSeparator }
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
@@ -544,6 +592,9 @@ final class GroovySorterSpec extends Specification {
           }
         '''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "sort without inserting newlines between different configurations"() {
@@ -585,8 +636,7 @@ final class GroovySorterSpec extends Specification {
   def "sort add function call in dependencies"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
           dependencies {
             implementation(projects.foo)
             implementation(projects.bar)
@@ -596,16 +646,19 @@ final class GroovySorterSpec extends Specification {
 
             add("debugImplementation", projects.foo)
             add(releaseImplementation, projects.foo)
-          }'''.stripIndent())
+          }''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
-    assertThat(newScript).isEqualTo(
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           api(projects.bar)
@@ -617,14 +670,16 @@ final class GroovySorterSpec extends Specification {
           add("debugImplementation", projects.foo)
           add(releaseImplementation, projects.foo)
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   def "can sort dependencies with artifact type specified"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      '''\
+    def fileContent = normalize('''\
         dependencies {
           implementation projects.foo.internal
           implementation projects.bar.public
@@ -636,15 +691,18 @@ final class GroovySorterSpec extends Specification {
           implementation libs.androidx.constraintLayout
           implementation libs.common.view
           implementation projects.core
-        }'''.stripIndent())
+        }''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
     notThrown(BuildScriptParseException)
 
     and:
-    assertThat(newScript).isEqualTo(
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
           implementation libs.androidx.constraintLayout
@@ -658,15 +716,17 @@ final class GroovySorterSpec extends Specification {
           implementation projects.core
           implementation projects.foo.internal
         }'''.stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   // https://github.com/square/gradle-dependencies-sorter/issues/59
   def "can sort multiple semantically different dependencies blocks"() {
     given:
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript,
-      """\
+    def fileContent = normalize("""\
       import app.cash.redwood.buildsupport.FlexboxHelpers
 
       apply plugin: 'com.android.library'
@@ -712,14 +772,16 @@ final class GroovySorterSpec extends Specification {
 
       android {
         namespace 'app.cash.redwood.layout.composeui'
-      }""".stripIndent()
-    )
+      }""", lineSeparator)
+    Files.writeString(buildScript, fileContent)
 
     when:
-    def newScript = GroovySorter.of(buildScript).rewritten()
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
 
     then:
-    assertThat(newScript).isEqualTo(
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       """\
       import app.cash.redwood.buildsupport.FlexboxHelpers
 
@@ -768,11 +830,27 @@ final class GroovySorterSpec extends Specification {
       android {
         namespace 'app.cash.redwood.layout.composeui'
       }""".stripIndent()
-    )
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
   }
 
   private static List<String> trimmedLinesOf(CharSequence content) {
     // to lines and trim whitespace off end
     return content.readLines().collect { it.replaceFirst('\\s+\$', '') }
+  }
+
+  private static CharSequence normalize(CharSequence input, String lineSeparator) {
+    return input.stripIndent().replace('\n', lineSeparator)
+  }
+
+  private static List<String> extractLineSeparators(CharSequence input) {
+    List<String> lineSeparators = new ArrayList<>()
+    Matcher matcher = Pattern.compile("(\\r\\n|\\r|\\n)").matcher(input)
+    while (matcher.find()) {
+      lineSeparators.add(matcher.group())
+    }
+    return lineSeparators
   }
 }
