@@ -1,11 +1,15 @@
 # gradle-dependencies-sorter
 
-## Version 0.16 (unreleased)
+## Version 0.16
+* [Feat]: Make Gradle task to check if dependencies are sorted cacheable.
+* [Feat]: Add support for different line separator characters.
+* [Feat]: Rename POM_ARTIFACT_ID to 'sort'.
+* [Feat]: add publishing config for sort module.
 
 ## Version 0.15
-* [Feat] match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`.
+* [Feat]: match any build file for sorting in a module that ends in `.gradle` or `.gradle.kts`.
 * [Feat]: Add `--version` support.
-* [Chore] Migrate to Sonatype Central Portal.
+* [Chore]: Migrate to Sonatype Central Portal.
 
 ## Version 0.14
 * [chore]: bump dependencies. Specifically antlr-related ones.
