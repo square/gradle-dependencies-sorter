@@ -55,6 +55,7 @@ class SortDependenciesPlugin : Plugin<Project> {
     sortProgram.setFrom(sortApp)
     version.set(extension.version)
     insertBlankLines.set(extension.insertBlankLines)
+    markerFile.set(project.layout.buildDirectory.file("sort-dependencies-marker"))
   }
 
   private fun CheckSortDependenciesTask.configure(

@@ -17,12 +17,25 @@ abstract class SortDependenciesTask @Inject constructor(
 
     @Suppress("LeakingThis")
     doNotTrackState("This task modifies build scripts in place.")
+
+    // Skip the expensive javaexec when the build script hasn't been modified since the last sort,
+    // using a marker file's timestamp as the reference point.
+    @Suppress("LeakingThis")
+    onlyIf {
+      val marker = markerFile.get().asFile
+      !marker.exists() || buildScript.get().asFile.lastModified() > marker.lastModified()
+    }
   }
 
   // Not really "internal", but the input and the output are the same: this task will potentially modify the build
   // script in place.
   @get:Internal
   abstract val buildScript: RegularFileProperty
+
+  // Not a real output — doNotTrackState disables all tracking. This is only used by the onlyIf
+  // check to skip re-sorting unchanged build scripts based on the marker's timestamp.
+  @get:Internal
+  abstract val markerFile: RegularFileProperty
 
   @TaskAction fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
@@ -59,6 +72,13 @@ abstract class SortDependenciesTask @Inject constructor(
           }
         }
       }
+    }
+
+    // Touch the marker file so the onlyIf check can skip future runs. writeBytes is used instead
+    // of createNewFile because the latter is a no-op when the file already exists.
+    markerFile.get().asFile.apply {
+      parentFile.mkdirs()
+      writeBytes(ByteArray(0))
     }
   }
 
