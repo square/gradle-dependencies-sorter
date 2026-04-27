@@ -521,6 +521,8 @@ class KotlinSorterSpec extends Specification {
           implementation(files("a.jar"))
           api(file("another.jar"))
           compileOnly(fileTree("libs") { include("*.jar") })
+          // Expose the generated version catalog API to the plugin.
+          implementation(files(libs::class.java.superclass.protectionDomain.codeSource.location))
         }
       ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
@@ -535,6 +537,8 @@ class KotlinSorterSpec extends Specification {
           api(file("another.jar"))
 
           implementation(files("a.jar"))
+          // Expose the generated version catalog API to the plugin.
+          implementation(files(libs::class.java.superclass.protectionDomain.codeSource.location))
 
           compileOnly(fileTree("libs") { include("*.jar") })
         }

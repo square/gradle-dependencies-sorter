@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   alias(libs.plugins.kotlin.jvm)
   id 'java-gradle-plugin'
@@ -17,6 +19,16 @@ gradlePlugin {
       id = 'com.squareup.plugin'
       implementationClass = 'com.squareup.convention.PluginConvention'
     }
+  }
+}
+
+tasks.withType(JavaCompile).configureEach {
+  options.release = 11
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_11
   }
 }
 
