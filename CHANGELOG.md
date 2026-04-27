@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Version 0.17
+* [Feat]: bump kotlin-editor.
+
 ## Version 0.16
 * [Feat]: Make Gradle task to check if dependencies are sorted cacheable.
 * [Feat]: Add support for different line separator characters.
