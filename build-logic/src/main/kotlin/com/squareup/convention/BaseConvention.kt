@@ -44,7 +44,7 @@ class BaseConvention : Plugin<Project> {
 
     with(dependencies) {
       // Align all Kotlin components on the same version
-      add("implementation", platform("org.jetbrains.kotlin:kotlin-bom"))
+      add("implementation", platform(versionCatalog.findLibrary("kotlin-bom").orElseThrow()))
 
       // JUnit5 / Jupiter Platform stuff
       add("testImplementation", versionCatalog.findLibrary("junit-api").orElseThrow())
