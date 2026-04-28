@@ -1,7 +1,8 @@
 # gradle-dependencies-sorter
 
-## Version 0.17
+## Version 0.17, 0.17.1
 * [Feat]: bump kotlin-editor.
+* Fix publishing issues.
 
 ## Version 0.16
 * [Feat]: Make Gradle task to check if dependencies are sorted cacheable.
