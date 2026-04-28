@@ -7,7 +7,7 @@ java = "11"
 junit5 = "5.11.4"
 kotlin = "2.1.21"
 kotlinEditor = "0.21"
-mavenPublish = "0.34.0"
+mavenPublish = "0.35.0"
 moshi = "1.14.0"
 retrofit = "2.9.0"
 shadow = "8.3.5"
@@ -16,6 +16,7 @@ shadow = "8.3.5"
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
 grammar = "com.autonomousapps:gradle-script-grammar:0.5"
 kotlinEditor-core = { module = "app.cash.kotlin-editor:core", version.ref = "kotlinEditor" }
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
 okhttp3 = "com.squareup.okhttp3:okhttp:4.9.0"
 moshi-core = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
