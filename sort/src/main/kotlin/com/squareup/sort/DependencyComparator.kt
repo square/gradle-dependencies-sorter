@@ -48,7 +48,7 @@ internal class DependencyComparator : Comparator<DependencyDeclaration> {
 
     if (left.isFileDependency() && right.isFileDependency()) return compareDependencies(left, right)
     if (left.isFileDependency()) return -1
-    if (right.isFileDependency()) return -1
+    if (right.isFileDependency()) return 1
 
     return compareDependencies(left, right)
   }
