@@ -1,5 +1,9 @@
 # gradle-dependencies-sorter
 
+## Version 0.18.0
+* [Fix]: make sorting of files() dependencies stable.
+* [Fix]: update kotlin-editor to latest.
+
 ## Version 0.17, 0.17.1
 * [Feat]: bump kotlin-editor.
 * Fix publishing issues.
