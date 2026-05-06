@@ -12,6 +12,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 import static com.google.common.truth.Truth.assertThat
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 class KotlinSorterSpec extends Specification {
 
@@ -904,6 +905,36 @@ class KotlinSorterSpec extends Specification {
         namespace = "app.cash.redwood.layout.composeui"
       }""".stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  // https://github.com/square/gradle-dependencies-sorter/issues/148
+  def "can sort source sets usage"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+        testing {
+          suites {
+            val testReceiveSpansDisabled by registering(JvmTestSuite::class) {
+              dependencies {
+                implementation(project(":instrumentation:spring:spring-jms:spring-jms-2.0:testing"))
+                // this is just to avoid a bit more copy-pasting
+                implementation(project.sourceSets["test"].output)
+              }
+            }
+          }
+        }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
+
+    expect:
+    assertThrows(AlreadyOrderedException) {
+      sorter.rewritten()
+    }
 
     where:
     lineSeparator << ['\n', '\r\n']
