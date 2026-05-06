@@ -19,6 +19,7 @@ class DependencyComparatorTest extends Specification {
         '  /*\n   * Here\'s a multiline comment.\n   */'),
       projectDependency('implementation', '":milliways"', 'implementation(project(":milliways"))'),
       fileDependency('implementation', '"libs/whatever.jar"', 'implementation(files("libs/whatever.jar"))'),
+      projectDependency('implementation', 'project.sourceSets["test"].output', 'implementation(project.sourceSets["test"].output)')
     ]
 
     when:
@@ -26,12 +27,13 @@ class DependencyComparatorTest extends Specification {
 
     then:
     deps[0].base.identifier.path == '":milliways"'
-    deps[1].base.identifier.path == '"libs/whatever.jar"'
-    deps[2].base.identifier.path == '"a:1.0"'
-    deps[3].base.identifier.path == '"b:1.0"'
-    deps[4].base.identifier.path == '"heart:of-gold:1.0"'
-    deps[5].base.identifier.path == 'deps.bar'
-    deps[6].base.identifier.path == 'deps.foo'
+    deps[1].base.identifier.path == 'project.sourceSets["test"].output'
+    deps[2].base.identifier.path == '"libs/whatever.jar"'
+    deps[3].base.identifier.path == '"a:1.0"'
+    deps[4].base.identifier.path == '"b:1.0"'
+    deps[5].base.identifier.path == '"heart:of-gold:1.0"'
+    deps[6].base.identifier.path == 'deps.bar'
+    deps[7].base.identifier.path == 'deps.foo'
   }
 
   def "sorting dependency declarations is stable"() {
