@@ -255,6 +255,44 @@ final class FunctionalSpec extends Specification {
     build(dir, 'sortDependencies', '--verbose')
   }
 
+  def "does not register tasks on a project without a build script"() {
+    given: 'A multi-project build whose intermediate `:sub` project has no build script'
+    def settingsScript = dir.resolve('settings.gradle.kts')
+    Files.writeString(settingsScript,
+      """\
+        dependencyResolutionManagement {
+          repositories {
+            mavenCentral()
+            maven { url = uri("$REPO") }
+          }
+        }
+
+        include(":sub:project")""".stripIndent()
+    )
+    def rootBuildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(rootBuildScript,
+      '''\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      subprojects {
+        apply(plugin = "com.squareup.sort-dependencies")
+      }'''.stripIndent()
+    )
+    def subproject = dir.resolve('sub/project/build.gradle.kts')
+    Files.createDirectories(subproject.parent)
+    Files.createFile(subproject)
+
+    when: 'We check dependency sorting across the build'
+    def result = build(dir, 'checkSortDependencies')
+
+    then: 'The scriptless container project registers no task, while the leaf project does'
+    result.task(':sub:checkSortDependencies') == null
+    result.task(':sub:project:checkSortDependencies') != null
+  }
+
   def "no blank lines between different configurations when flag is disabled"() {
     given: 'A build script with unsorted dependencies and multiple configurations'
     def buildScript = dir.resolve('build.gradle.kts')

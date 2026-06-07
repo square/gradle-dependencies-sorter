@@ -16,6 +16,16 @@ class SortDependenciesPlugin : Plugin<Project> {
   private lateinit var extension: SortDependenciesExtension
 
   override fun apply(target: Project): Unit = target.run {
+    // A project without a build script — e.g. an intermediate "container" project that
+    // Gradle synthesizes for a nested path such as `:sub:project` — has no dependencies
+    // to sort. Registering the tasks anyway would wire a non-existent build script as a
+    // required @InputFile, which Gradle's strict input validation rejects as a hard
+    // error (as of Gradle 9; a deprecation warning before that). Nothing to do here.
+    if (!buildFile.exists()) {
+      logger.info("sort-dependencies: skipping '$path'; it has no build script.")
+      return@run
+    }
+
     extension = SortDependenciesExtension.create(this)
 
     // nb: Can't use a detached configuration because that needs a Dependency, not a dependency notation. The latter can
