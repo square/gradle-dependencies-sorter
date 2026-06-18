@@ -2,6 +2,7 @@ package com.squareup.sort
 
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
+import com.squareup.sort.groovy.GroovySorter
 import com.squareup.sort.kotlin.KotlinSorter
 import spock.lang.Specification
 import spock.lang.TempDir
@@ -935,6 +936,44 @@ class KotlinSorterSpec extends Specification {
     assertThrows(AlreadyOrderedException) {
       sorter.rewritten()
     }
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  // https://github.com/square/gradle-dependencies-sorter/issues/153
+  def "can sort dependencies blocks using dot syntax"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize("""\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          api(projects.redwoodLayoutWidget)
+          implementation(projects.redwoodFlexbox)
+          implementation(projects.redwoodWidgetCompose)
+          implementation(libs.jetbrains.compose.foundation)
+        }
+      }""", lineSeparator)
+    Files.writeString(buildScript, fileContents)
+
+    when:
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      """\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          api(projects.redwoodLayoutWidget)
+
+          implementation(libs.jetbrains.compose.foundation)
+          implementation(projects.redwoodFlexbox)
+          implementation(projects.redwoodWidgetCompose)
+        }
+      }""".stripIndent()
+    )).inOrder()
 
     where:
     lineSeparator << ['\n', '\r\n']

@@ -87,7 +87,7 @@ public class KotlinSorter private constructor(
 
   override fun exitNamedBlock(ctx: NamedBlockContext) {
     if (ctx.isDependencies) {
-      rewriter.replace(ctx.start, ctx.stop, dependenciesBlock())
+      rewriter.replace(ctx.start, ctx.stop, dependenciesBlock(ctx))
 
       // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
       mutableDependencies.clear()
@@ -113,11 +113,11 @@ public class KotlinSorter private constructor(
     }
   }
 
-  private fun dependenciesBlock() = buildString {
+  private fun dependenciesBlock(ctx: NamedBlockContext) = buildString {
     val newOrder = mutableListOf<KotlinDependencyDeclaration>()
     var didWrite = false
 
-    appendLine("dependencies {")
+    appendLine("${ctx.name().text} {")
 
     /*
      * not-easily-modelable elements
