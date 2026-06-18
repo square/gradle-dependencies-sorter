@@ -2,7 +2,6 @@ package com.squareup.sort
 
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
-import com.squareup.sort.groovy.GroovySorter
 import com.squareup.sort.kotlin.KotlinSorter
 import spock.lang.Specification
 import spock.lang.TempDir
