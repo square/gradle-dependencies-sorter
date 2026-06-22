@@ -85,7 +85,7 @@ internal class Configuration(
       // If each maps to the same configuration, we now differentiate based on whether variants are
       // involved. Non-variants are "higher than" variants.
       if (leftC.variant != null && rightC.variant != null) {
-        return rightC.variant!!.compareTo(leftC.variant!!)
+        return leftC.variant!!.compareTo(rightC.variant!!)
       }
       return if (rightC.variant != null) return -1 else 1
     }

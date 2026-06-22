@@ -1,5 +1,8 @@
 # gradle-dependencies-sorter
 
+## Unreleased
+* [Fix]: fix partial matches in the dependency types being sorted backwards.
+
 ## Version 0.20.0
 * [Feat]: bump kotlin-editor.
 * [Feat]: bump gradle-script-grammar.

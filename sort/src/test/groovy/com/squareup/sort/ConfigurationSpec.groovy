@@ -23,8 +23,8 @@ final class ConfigurationSpec extends Specification {
     then:
     assertThat(configurations).containsExactly(
       'api',
-      'fooApi',
       'debugApi',
+      'fooApi',
       'implementation',
       'releaseImplementation',
       'compileOnlyApi',
