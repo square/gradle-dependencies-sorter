@@ -25,6 +25,8 @@ internal class Configuration(
       "testCompileOnly" to { Configuration("testCompileOnly", 10) },
       "testRuntimeOnly" to { Configuration("testRuntimeOnly", 11) },
       "androidTestImplementation" to { Configuration("androidTestImplementation", 12) },
+	  "androidTestCompileOnly" to { Configuration("androidTestCompileOnly", 13) },
+	  "androidTestRuntimeOnly" to { Configuration("androidTestRuntimeOnly", 14) },
     )
 
     fun of(configurationName: String): Configuration? {

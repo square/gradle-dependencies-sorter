@@ -11,8 +11,8 @@ final class ConfigurationSpec extends Specification {
     def configurations = [
       'implementation', 'api', 'releaseImplementation', 'debugApi', 'fooApi', 'kapt',
       'annotationProcessor', 'runtimeOnly', 'compileOnly', 'compileOnlyApi', 'testRuntimeOnly',
-      'testCompileOnly', 'testImplementation', 'androidTestImplementation',
-      'antlr', 'foo', 'bar', 'baz'
+      'testCompileOnly', 'testImplementation', 'androidTestImplementation', 'androidTestRuntimeOnly',
+      'antlr', 'foo', 'bar', 'baz', 'androidTestCompileOnly'
     ]
 
     when:
@@ -36,6 +36,8 @@ final class ConfigurationSpec extends Specification {
       'testCompileOnly',
       'testRuntimeOnly',
       'androidTestImplementation',
+      'androidTestCompileOnly',
+      'androidTestRuntimeOnly',
       'antlr',
       'bar',
       'baz',
