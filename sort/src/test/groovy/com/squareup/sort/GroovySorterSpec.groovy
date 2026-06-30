@@ -52,6 +52,10 @@ final class GroovySorterSpec extends Specification {
             // Here's a multi-line comment
             // Here's the second line of the comment
             implementation deps.foo
+            api projects.foo
+            implementation projects.foo.internal
+            api projects.bar
+            implementation projects.bar.internal
 
             /*
              * Here's a multiline comment.
@@ -97,9 +101,13 @@ final class GroovySorterSpec extends Specification {
 
           dependencies {
             api project(":marvin")
+            api projects.bar
+            api projects.foo
             api 'zzz:yyy:1.0'
 
             implementation project(':milliways')
+            implementation projects.bar.internal
+            implementation projects.foo.internal
             implementation 'a:1.0'
             implementation 'b:1.0'
             implementation 'heart:of-gold:1.0'
@@ -682,6 +690,7 @@ final class GroovySorterSpec extends Specification {
     def fileContent = normalize('''\
         dependencies {
           implementation projects.foo.internal
+          implementation project(":marvin")
           implementation projects.bar.public
           implementation (libs.baz.ui) {
             artifact {
@@ -705,6 +714,10 @@ final class GroovySorterSpec extends Specification {
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
+          implementation project(":marvin")
+          implementation projects.bar.public
+          implementation projects.core
+          implementation projects.foo.internal
           implementation libs.androidx.constraintLayout
           implementation (libs.baz.ui) {
             artifact {
@@ -712,9 +725,6 @@ final class GroovySorterSpec extends Specification {
             }
           }
           implementation libs.common.view
-          implementation projects.bar.public
-          implementation projects.core
-          implementation projects.foo.internal
         }'''.stripIndent()
     )).inOrder()
 
@@ -757,8 +767,8 @@ final class GroovySorterSpec extends Specification {
             dependencies {
               api projects.redwoodLayoutWidget
               implementation projects.redwoodFlexbox
-              implementation projects.redwoodWidgetCompose
               implementation libs.jetbrains.compose.foundation
+              implementation projects.redwoodWidgetCompose
             }
           }
 
@@ -813,9 +823,9 @@ final class GroovySorterSpec extends Specification {
             dependencies {
               api projects.redwoodLayoutWidget
 
-              implementation libs.jetbrains.compose.foundation
               implementation projects.redwoodFlexbox
               implementation projects.redwoodWidgetCompose
+              implementation libs.jetbrains.compose.foundation
       }
           }
 

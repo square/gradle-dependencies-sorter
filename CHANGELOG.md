@@ -2,8 +2,9 @@
 
 ## Unreleased
 * [Feat]: bump kotlin-editor.
+* [Feat]: bump gradle-script-grammar.
 * [Fix]: don't register tasks for projects without a build script. Applying the plugin to an intermediate "container" project (e.g. `:sub` in `include(":sub:project")`) wired a non-existent build file as a required task input, which Gradle's strict input validation fails as a hard error under Gradle 9.
-* [Fix]: sort type-safe project dependencies before external libraries in Kotlin DSL.
+* [Fix]: sort type-safe project dependencies before external libraries.
 
 ## Version 0.19.0
 * [Feat]: support parsing and sorting dependencies blocks with dot syntax.

@@ -71,7 +71,9 @@ internal class GroovyDependencyDeclaration(
         // If project(path: 'foo') syntax is used, take the path value.
         // Else, if project('foo') syntax is used, take the ID.
         projectMapEntry().firstOrNull { it.key.text == "path:" }?.value?.text
-          ?: ID().text
+          ?: ID()?.text
+          ?: PROJECT_ACCESSOR()?.text
+          ?: text
       }
 
       isFileDependency() -> dependency.fileDependency().ID().text

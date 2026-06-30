@@ -14,7 +14,7 @@ shadow = "8.3.5"
 
 [libraries]
 clikt = "com.github.ajalt.clikt:clikt:4.2.2"
-grammar = "com.autonomousapps:gradle-script-grammar:0.5"
+grammar = "com.autonomousapps:gradle-script-grammar:0.6"
 kotlinEditor-core = { module = "app.cash.kotlin-editor:core", version.ref = "kotlinEditor" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
