@@ -778,6 +778,9 @@ class KotlinSorterSpec extends Specification {
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
+          implementation(projects.bar.public)
+          implementation(projects.core)
+          implementation(projects.foo.internal)
           implementation(libs.androidx.constraintLayout)
           implementation(libs.baz.ui) {
             artifact {
@@ -785,9 +788,6 @@ class KotlinSorterSpec extends Specification {
             }
           }
           implementation(libs.common.view)
-          implementation(projects.bar.public)
-          implementation(projects.core)
-          implementation(projects.foo.internal)
         }
       '''.stripIndent()
     )).inOrder()
@@ -831,8 +831,8 @@ class KotlinSorterSpec extends Specification {
             dependencies {
               api(projects.redwoodLayoutWidget)
               implementation(projects.redwoodFlexbox)
-              implementation(projects.redwoodWidgetCompose)
               implementation(libs.jetbrains.compose.foundation)
+              implementation(projects.redwoodWidgetCompose)
             }
           }
 
@@ -887,9 +887,9 @@ class KotlinSorterSpec extends Specification {
             dependencies {
               api(projects.redwoodLayoutWidget)
 
-              implementation(libs.jetbrains.compose.foundation)
               implementation(projects.redwoodFlexbox)
               implementation(projects.redwoodWidgetCompose)
+              implementation(libs.jetbrains.compose.foundation)
             }
           }
 
@@ -949,8 +949,8 @@ class KotlinSorterSpec extends Specification {
         sourceSets.commonMain.dependencies {
           api(projects.redwoodLayoutWidget)
           implementation(projects.redwoodFlexbox)
-          implementation(projects.redwoodWidgetCompose)
           implementation(libs.jetbrains.compose.foundation)
+          implementation(projects.redwoodWidgetCompose)
         }
       }""", lineSeparator)
     Files.writeString(buildScript, fileContents)
@@ -967,9 +967,9 @@ class KotlinSorterSpec extends Specification {
         sourceSets.commonMain.dependencies {
           api(projects.redwoodLayoutWidget)
 
-          implementation(libs.jetbrains.compose.foundation)
           implementation(projects.redwoodFlexbox)
           implementation(projects.redwoodWidgetCompose)
+          implementation(libs.jetbrains.compose.foundation)
         }
       }""".stripIndent()
     )).inOrder()
