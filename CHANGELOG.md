@@ -1,6 +1,7 @@
 # gradle-dependencies-sorter
 
 ## Unreleased
+* [Fix]: preserve indentation in nested dependencies blocks.
 * [Fix]: fix partial matches in the dependency types being sorted backwards.
 
 ## Version 0.20.0
