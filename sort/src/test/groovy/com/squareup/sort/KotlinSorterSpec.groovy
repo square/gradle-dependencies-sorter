@@ -910,6 +910,114 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  // https://github.com/square/gradle-dependencies-sorter/issues/137
+  def "does not rewrite a sorted deeply nested dependencies block"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+      dependencies {
+        implementation(libs.z)
+        implementation(libs.a)
+      }
+
+      androidComponents {
+        onVariants { variant ->
+          when (variant.name) {
+            "someVariant1",
+            "someVariant2" ->
+              sourceSets {
+                named(variant.name).configure {
+                  dependencies { implementation(projects.infra.someModule) }
+                }
+              }
+            else -> error("unexpected variant")
+          }
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+
+    when:
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+      dependencies {
+        implementation(libs.a)
+        implementation(libs.z)
+      }
+
+      androidComponents {
+        onVariants { variant ->
+          when (variant.name) {
+            "someVariant1",
+            "someVariant2" ->
+              sourceSets {
+                named(variant.name).configure {
+                  dependencies { implementation(projects.infra.someModule) }
+                }
+              }
+            else -> error("unexpected variant")
+          }
+        }
+      }
+      '''.stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  // https://github.com/square/gradle-dependencies-sorter/issues/137
+  def "sorts a deeply nested dependencies block using its indentation"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+      androidComponents {
+        onVariants { variant ->
+          sourceSets {
+            named(variant.name).configure {
+              dependencies {
+                implementation(projects.infra.z)
+                implementation(projects.infra.a)
+              }
+            }
+          }
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+
+    when:
+    def config = new Sorter.Config(true)
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+      androidComponents {
+        onVariants { variant ->
+          sourceSets {
+            named(variant.name).configure {
+              dependencies {
+                implementation(projects.infra.a)
+                implementation(projects.infra.z)
+              }
+            }
+          }
+        }
+      }
+      '''.stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
   // https://github.com/square/gradle-dependencies-sorter/issues/148
   def "can sort source sets usage"() {
     given:

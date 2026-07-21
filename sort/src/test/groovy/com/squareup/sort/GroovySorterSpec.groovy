@@ -826,13 +826,13 @@ final class GroovySorterSpec extends Specification {
               implementation projects.redwoodFlexbox
               implementation projects.redwoodWidgetCompose
               implementation libs.jetbrains.compose.foundation
-      }
+            }
           }
 
           androidUnitTest {
             dependencies {
               implementation projects.redwoodLayoutSharedTest
-      }
+            }
           }
         }
       }
@@ -840,6 +840,40 @@ final class GroovySorterSpec extends Specification {
       android {
         namespace 'app.cash.redwood.layout.composeui'
       }""".stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "preserves a qualified nested dependencies block name"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          implementation libs.z
+          implementation libs.a
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          implementation libs.a
+          implementation libs.z
+        }
+      }
+      '''.stripIndent()
     )).inOrder()
 
     where:
