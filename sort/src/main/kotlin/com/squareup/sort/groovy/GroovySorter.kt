@@ -13,12 +13,13 @@ import com.squareup.parse.AbstractErrorListener
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.DependencyComparator
+import com.squareup.sort.Ordering
+import com.squareup.sort.RewrittenBlock
 import com.squareup.sort.Sorter
 import com.squareup.sort.Texts
 import com.squareup.utils.ifNotEmpty
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 import org.antlr.v4.runtime.TokenStreamRewriter
@@ -37,40 +38,27 @@ public class GroovySorter private constructor(
   private val lineSeparator: String,
 ) : Sorter, GradleScriptBaseListener() {
 
-  // We use a default of two spaces, but update it at most once later on.
-  private var smartIndentSet = false
-  private var indent = "  "
-
   // TODO we can probably sort this block too.
   private var isInBuildScriptBlock = false
 
   private val dependencyComparator = DependencyComparator()
   private val dependenciesByConfiguration =
     mutableMapOf<String, MutableList<GroovyDependencyDeclaration>>()
-  private val ordering = Ordering(tokens)
+  private val ordering = Ordering<GroovyDependencyDeclaration> { first, second ->
+    tokens.getText(first.declaration) == tokens.getText(second.declaration)
+  }
 
   private fun collectDependency(
     configuration: String,
     dependencyDeclaration: GroovyDependencyDeclaration
   ) {
-    setIndent(dependencyDeclaration.declaration)
-    ordering.collectDependency(dependencyDeclaration)
+    ordering.add(dependencyDeclaration)
     dependenciesByConfiguration.merge(
       configuration,
       mutableListOf(dependencyDeclaration)
     ) { acc, inc ->
       acc.apply { addAll(inc) }
     }
-  }
-
-  private fun setIndent(ctx: ParserRuleContext) {
-    if (smartIndentSet) return
-
-    tokens.getHiddenTokensToLeft(ctx.start.tokenIndex, GradleScriptLexer.WHITESPACE)
-      ?.firstOrNull()?.text?.replace("\n", "")?.let {
-        smartIndentSet = true
-        indent = it
-      }
   }
 
   /**
@@ -147,47 +135,71 @@ public class GroovySorter private constructor(
 
   override fun exitDependencies(ctx: DependenciesContext) {
     if (isInBuildScriptBlock) return
-    rewriter.replace(ctx.start, ctx.stop, dependenciesBlock())
+    val rewrittenBlock = dependenciesBlock(ctx)
+    // Leave sorted blocks untouched so their existing formatting is preserved.
+    if (!rewrittenBlock.isAlreadyOrdered) {
+      rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+    }
 
     // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
     dependenciesByConfiguration.clear()
   }
 
-  private fun dependenciesBlock() = buildString {
+  private fun dependenciesBlock(ctx: DependenciesContext): RewrittenBlock {
     val newOrder = mutableListOf<GroovyDependencyDeclaration>()
 
-    appendLine("dependencies {")
-    dependenciesByConfiguration.entries.sortedWith(GroovyConfigurationComparator)
-      .forEachIndexed { i, entry ->
-        // Place a blank line between chunks of the same configuration, if configured
-        if (i != 0 && config.insertBlankLines) appendLine()
+    // Blocks can be nested inside any DSL, so derive indentation from this block's source text.
+    val blockIndent = indentationBefore(ctx.start.tokenIndex).orEmpty()
+    val bodyIndent = dependenciesByConfiguration.values.asSequence()
+      .flatten()
+      .minByOrNull { it.declaration.start.tokenIndex }
+      ?.let { indentationBefore(it.declaration.start.tokenIndex) }
+      ?: "$blockIndent  "
+    val text = buildString {
+      appendLine("${ctx.start.text.substringBeforeLast('{').trimEnd()} {")
+      dependenciesByConfiguration.entries.sortedWith(GroovyConfigurationComparator)
+        .forEachIndexed { i, entry ->
+          // Place a blank line between chunks of the same configuration, if configured
+          if (i != 0 && config.insertBlankLines) appendLine()
 
-        entry.value.sortedWith(dependencyComparator)
-          .map { dependency ->
-            dependency to Texts(
-              comment = precedingComment(dependency),
-              declarationText = tokens.getText(dependency.declaration),
-            )
-          }
-          .distinctBy { (_, texts) -> texts }
-          .forEach { (declaration, texts) ->
-            newOrder += declaration
+          entry.value.sortedWith(dependencyComparator)
+            .map { dependency ->
+              dependency to Texts(
+                comment = precedingComment(dependency, bodyIndent),
+                declarationText = tokens.getText(dependency.declaration),
+              )
+            }
+            .distinctBy { (_, texts) -> texts }
+            .forEach { (declaration, texts) ->
+              newOrder += declaration
 
-            // Write preceding comments if there are any
-            if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
+              // Write preceding comments if there are any
+              if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
 
-            append(indent.replace("\r", ""))
-            appendLine(texts.declarationText.replace("\r", ""))
-          }
-      }
-    append("}")
+              append(bodyIndent.replace("\r", ""))
+              appendLine(texts.declarationText.replace("\r", ""))
+            }
+        }
+      append(blockIndent)
+      append("}")
+    }.replace("\n", lineSeparator)
 
-    // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
-    // dependencies blocks
-    ordering.checkOrdering(newOrder)
-  }.replace("\n", lineSeparator)
+    return RewrittenBlock(
+      text = text,
+      isAlreadyOrdered = ordering.checkOrdering(newOrder),
+    )
+  }
 
-  private fun precedingComment(dependency: GroovyDependencyDeclaration) =
+  private fun indentationBefore(tokenIndex: Int): String? {
+    return tokens.getHiddenTokensToLeft(tokenIndex, GradleScriptLexer.WHITESPACE)
+      ?.lastOrNull()
+      ?.text
+      ?.substringAfterLast('\n')
+      ?.substringAfterLast('\r')
+      ?.takeIf { it.all { char -> char == ' ' || char == '\t' } }
+  }
+
+  private fun precedingComment(dependency: GroovyDependencyDeclaration, indent: String) =
     tokens.getHiddenTokensToLeft(
       dependency.declaration.start.tokenIndex,
       GradleScriptLexer.COMMENTS
@@ -243,38 +255,5 @@ internal class RewriterErrorListener : AbstractErrorListener() {
     e: RecognitionException?
   ) {
     errorMessages.add(msg)
-  }
-}
-
-private class Ordering(
-  private val tokens: CommonTokenStream,
-) {
-
-  private val dependenciesInOrder = mutableListOf<GroovyDependencyDeclaration>()
-  private val orderedBlocks = mutableListOf<Boolean>()
-
-  fun isAlreadyOrdered(): Boolean = orderedBlocks.all { it }
-
-  fun collectDependency(dependency: GroovyDependencyDeclaration) {
-    dependenciesInOrder += dependency
-  }
-
-  /**
-   * Checks ordering as we leave a dependencies block. Clears the list of dependencies to prepare for the potential next
-   * block.
-   */
-  fun checkOrdering(newOrder: List<GroovyDependencyDeclaration>) {
-    orderedBlocks += isSameOrder(dependenciesInOrder, newOrder)
-    dependenciesInOrder.clear()
-  }
-
-  private fun isSameOrder(
-    first: List<GroovyDependencyDeclaration>,
-    second: List<GroovyDependencyDeclaration>
-  ): Boolean {
-    if (first.size != second.size) return false
-    return first.zip(second).all { (l, r) ->
-      tokens.getText(l.declaration) == tokens.getText(r.declaration)
-    }
   }
 }

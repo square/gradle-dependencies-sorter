@@ -13,12 +13,16 @@ import com.squareup.cash.grammar.KotlinParserBaseListener
 import com.squareup.parse.AlreadyOrderedException
 import com.squareup.parse.BuildScriptParseException
 import com.squareup.sort.DependencyComparator
+import com.squareup.sort.Ordering
+import com.squareup.sort.RewrittenBlock
 import com.squareup.sort.Sorter
 import com.squareup.sort.Texts
 import com.squareup.utils.ifNotEmpty
 import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CommonTokenStream
+import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.TokenStreamRewriter
+import org.antlr.v4.runtime.misc.Interval
 import java.nio.file.Path
 
 public class KotlinSorter private constructor(
@@ -40,9 +44,7 @@ public class KotlinSorter private constructor(
 
   private val dependencyComparator = DependencyComparator()
   private val mutableDependencies = MutableDependencies()
-  private val ordering = Ordering()
-
-  private var level = 0
+  private val ordering = Ordering<KotlinDependencyDeclaration>()
 
   /**
    * Returns the sorted build script.
@@ -78,7 +80,6 @@ public class KotlinSorter private constructor(
 
   override fun enterNamedBlock(ctx: NamedBlockContext) {
     dependencyExtractor.onEnterBlock()
-    level++
 
     if (ctx.isDependencies) {
       collectDependencies(dependencyExtractor.collectDependencies(ctx))
@@ -87,21 +88,25 @@ public class KotlinSorter private constructor(
 
   override fun exitNamedBlock(ctx: NamedBlockContext) {
     if (ctx.isDependencies) {
-      rewriter.replace(ctx.start, ctx.stop, dependenciesBlock(ctx))
+      val rewrittenBlock = dependenciesBlock(ctx)
+
+      // Leave sorted blocks untouched so their existing formatting is preserved.
+      if (!rewrittenBlock.isAlreadyOrdered) {
+        rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+      }
 
       // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
       mutableDependencies.clear()
     }
 
     dependencyExtractor.onExitBlock()
-    level--
   }
 
   private fun collectDependencies(container: DependencyContainer) {
     val declarations = container.getDependencyDeclarations().map { KotlinDependencyDeclaration(it) }
     mutableDependencies.statements += container.getStatements()
 
-    ordering.collectDependencies(declarations)
+    ordering.addAll(declarations)
 
     declarations.forEach { decl ->
       mutableDependencies.dependenciesByConfiguration.merge(
@@ -113,73 +118,91 @@ public class KotlinSorter private constructor(
     }
   }
 
-  private fun dependenciesBlock(ctx: NamedBlockContext) = buildString {
+  private fun dependenciesBlock(ctx: NamedBlockContext): RewrittenBlock {
     val newOrder = mutableListOf<KotlinDependencyDeclaration>()
-    var didWrite = false
 
-    appendLine("${ctx.name().text} {")
+    // Blocks can be nested inside any DSL, so derive indentation from this block's source text.
+    val blockIndent = indentationBefore(ctx.start).orEmpty()
+    val bodyIndent = ctx.statements().statement().firstOrNull()
+      ?.let { indentationBefore(it.start) }
+      ?: "$blockIndent$indent"
+    val text = buildString {
+      var didWrite = false
 
-    /*
-     * not-easily-modelable elements
-     */
+      appendLine("${ctx.name().text} {")
 
-    // An example of a statement, in this context, is an if-expression or property expression (declaration)
-    mutableDependencies.statements.forEach { stmt ->
-      append(indent.repeat(level))
-      appendLine(stmt.fullText(input)!!)
+      /*
+       * not-easily-modelable elements
+       */
 
-      didWrite = true
-    }
+      // An example of a statement, in this context, is an if-expression or property expression (declaration)
+      mutableDependencies.statements.forEach { stmt ->
+        append(bodyIndent)
+        appendLine(stmt.fullText(input)!!)
 
-    if (didWrite && mutableDependencies.expressions.isNotEmpty()) {
-      appendLine()
-    }
-
-    // An example of an expression, in this context, is a function call like `add("extraImplementation", "foo")`
-    mutableDependencies.expressions.forEach { expr ->
-      append(indent.repeat(level))
-      appendLine(expr)
-
-      didWrite = true
-    }
-
-    if (didWrite && mutableDependencies.declarations().isNotEmpty()) {
-      appendLine()
-    }
-
-    // straightforward declarations
-    mutableDependencies.declarations()
-      .sortedWith(KotlinConfigurationComparator)
-      .forEachIndexed { i, entry ->
-        // Place a blank line between chunks of the same configuration, if configured
-        if (i != 0 && config.insertBlankLines) appendLine()
-
-        entry.value.sortedWith(dependencyComparator)
-          .map { dependency ->
-            dependency to Texts(
-              comment = dependency.precedingComment(),
-              declarationText = dependency.fullText(),
-            )
-          }
-          .distinctBy { (_, texts) -> texts }
-          .forEach { (declaration, texts) ->
-            newOrder += declaration
-
-            // Write preceding comments if there are any
-            if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
-
-            append(indent.repeat(level))
-            appendLine(texts.declarationText.replace("\r", ""))
-          }
+        didWrite = true
       }
 
-    append(indent.repeat(level - 1))
-    append("}")
+      if (didWrite && mutableDependencies.expressions.isNotEmpty()) {
+        appendLine()
+      }
 
-    // If the new ordering matches the old ordering, we shouldn't rewrite the file. This accounts for multiple
-    // dependencies blocks
-    ordering.checkOrdering(newOrder)
-  }.replace("\n", lineSeparator)
+      // An example of an expression, in this context, is a function call like `add("extraImplementation", "foo")`
+      mutableDependencies.expressions.forEach { expr ->
+        append(bodyIndent)
+        appendLine(expr)
+
+        didWrite = true
+      }
+
+      if (didWrite && mutableDependencies.declarations().isNotEmpty()) {
+        appendLine()
+      }
+
+      // straightforward declarations
+      mutableDependencies.declarations()
+        .sortedWith(KotlinConfigurationComparator)
+        .forEachIndexed { i, entry ->
+          // Place a blank line between chunks of the same configuration, if configured
+          if (i != 0 && config.insertBlankLines) appendLine()
+
+          entry.value.sortedWith(dependencyComparator)
+            .map { dependency ->
+              dependency to Texts(
+                comment = dependency.precedingComment(),
+                declarationText = dependency.fullText(),
+              )
+            }
+            .distinctBy { (_, texts) -> texts }
+            .forEach { (declaration, texts) ->
+              newOrder += declaration
+
+              // Write preceding comments if there are any
+              if (texts.comment != null) appendLine(texts.comment.replace("\r", ""))
+
+              append(bodyIndent)
+              appendLine(texts.declarationText.replace("\r", ""))
+            }
+        }
+
+      append(blockIndent)
+      append("}")
+    }.replace("\n", lineSeparator)
+
+    return RewrittenBlock(
+      text = text,
+      isAlreadyOrdered = ordering.checkOrdering(newOrder),
+    )
+  }
+
+  private fun indentationBefore(token: Token): String? {
+    if (token.startIndex <= 0) return ""
+
+    return input.getText(Interval.of(0, token.startIndex - 1))
+      .substringAfterLast('\n')
+      .substringAfterLast('\r')
+      .takeIf { it.all { char -> char == ' ' || char == '\t' } }
+  }
 
   public companion object {
     @JvmStatic
@@ -217,36 +240,5 @@ private class MutableDependencies(
     dependenciesByConfiguration.clear()
     expressions.clear()
     statements.clear()
-  }
-}
-
-private class Ordering {
-
-  private val dependenciesInOrder = mutableListOf<KotlinDependencyDeclaration>()
-  private val orderedBlocks = mutableListOf<Boolean>()
-
-  fun isAlreadyOrdered(): Boolean = orderedBlocks.all { it }
-
-  fun collectDependencies(dependencies: List<KotlinDependencyDeclaration>) {
-    dependenciesInOrder += dependencies
-  }
-
-  /**
-   * Checks ordering as we leave a dependencies block. Clears the list of dependencies to prepare for the potential next
-   * block.
-   */
-  fun checkOrdering(newOrder: List<KotlinDependencyDeclaration>) {
-    orderedBlocks += isSameOrder(dependenciesInOrder, newOrder)
-    dependenciesInOrder.clear()
-  }
-
-  private fun isSameOrder(
-    first: List<KotlinDependencyDeclaration>,
-    second: List<KotlinDependencyDeclaration>,
-  ): Boolean {
-    if (first.size != second.size) return false
-    return first.zip(second).all { (l, r) ->
-      l == r
-    }
   }
 }
