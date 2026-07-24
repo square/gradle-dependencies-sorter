@@ -138,7 +138,7 @@ public class KotlinSorter private constructor(
       // An example of a statement, in this context, is an if-expression or property expression (declaration)
       mutableDependencies.statements.forEach { stmt ->
         append(bodyIndent)
-        appendLine(stmt.fullText(input)!!)
+        appendLine(stmt.fullText(input)!!.replace("\r", ""))
 
         didWrite = true
       }

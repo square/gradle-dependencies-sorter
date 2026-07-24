@@ -294,6 +294,52 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  // https://github.com/square/gradle-dependencies-sorter/issues/152
+  def "preserves formatting inside dependency constraints"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContent = normalize('''\
+      dependencies {
+        constraints {
+          testImplementation(libs.example) {
+            version { require("2.0.0") }
+          }
+        }
+        testImplementation(libs.junit)
+        testImplementation(libs.commonsIo)
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(insertBlankLines)
+
+    when:
+    def newScript = KotlinSorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+      dependencies {
+        constraints {
+          testImplementation(libs.example) {
+            version { require("2.0.0") }
+          }
+        }
+
+        testImplementation(libs.commonsIo)
+        testImplementation(libs.junit)
+      }
+      '''.stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator | insertBlankLines
+    '\n'          | true
+    '\n'          | false
+    '\r\n'        | true
+    '\r\n'        | false
+  }
+
   def "can sort build script with four-space tabs"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
