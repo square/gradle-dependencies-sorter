@@ -1,6 +1,7 @@
 # gradle-dependencies-sorter
 
 ## Unreleased
+* [Fix]: prevent extra blank lines inside Kotlin dependency constraints in CRLF files.
 * [Fix]: preserve indentation in nested dependencies blocks.
 * [Fix]: fix partial matches in the dependency types being sorted backwards.
 * [Fix]: add missing dependency types `androidTestCompileOnly` and `androidTestRuntimeOnly`.
