@@ -420,6 +420,145 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  def "issue 164 inserts only missing configuration blank lines in sorted blocks"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+      dependencies{
+          api(libs.foo) // Keep this trailing comment in place.
+          /* Keep this multiline comment with the implementation dependency.
+
+             Its internal blank line is not configuration separation. */
+          implementation("g:bar:1")
+
+          testImplementation(libs.baz)
+      }
+
+      dependencies {
+        api("g:foo:1")
+
+        implementation(libs.bar)
+      }
+      ''', lineSeparator)
+    def expected = normalize('''\
+      dependencies{
+          api(libs.foo) // Keep this trailing comment in place.
+
+          /* Keep this multiline comment with the implementation dependency.
+
+             Its internal blank line is not configuration separation. */
+          implementation("g:bar:1")
+
+          testImplementation(libs.baz)
+      }
+
+      dependencies {
+        api("g:foo:1")
+
+        implementation(libs.bar)
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
+
+    expect:
+    !sorter.isSorted()
+    sorter.rewritten() == expected
+
+    when:
+    Files.writeString(buildScript, expected)
+    def sorted = KotlinSorter.of(buildScript, config, lineSeparator)
+
+    then:
+    sorted.isSorted()
+
+    when:
+    sorted.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "issue 164 leaves configuration spacing alone when blank lines are disabled"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+      dependencies{
+          api(libs.foo)
+          implementation("g:bar:1")
+
+
+          testImplementation(libs.baz)
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def sorter = KotlinSorter.of(buildScript, new Sorter.Config(false), lineSeparator)
+
+    expect:
+    sorter.isSorted()
+    Files.readString(buildScript) == fileContents
+
+    when:
+    sorter.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "issue 164 rewrites same-line configuration groups canonically"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript, '''\
+      dependencies {
+        api("g:a:1"); implementation("g:b:1")
+      }
+      '''.stripIndent())
+    def sorter = KotlinSorter.of(buildScript, new Sorter.Config(true), '\n')
+
+    expect:
+    !sorter.isSorted()
+    sorter.rewritten() == '''\
+      dependencies {
+        api("g:a:1")
+
+        implementation("g:b:1")
+      }
+      '''.stripIndent()
+  }
+
+  def "issue 164 ignores configuration groups separated by other syntax"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = '''\
+      dependencies {
+        api("g:a:1")
+        constraints {
+          // Unrelated syntax remains untouched.
+        }
+        implementation("g:b:1")
+      }
+      '''.stripIndent()
+    Files.writeString(buildScript, fileContents)
+    def sorter = KotlinSorter.of(buildScript, new Sorter.Config(true), '\n')
+
+    expect:
+    sorter.isSorted()
+    Files.readString(buildScript) == fileContents
+
+    when:
+    sorter.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+  }
+
   def "will not sort already sorted build script"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')

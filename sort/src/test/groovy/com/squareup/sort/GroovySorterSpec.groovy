@@ -397,6 +397,98 @@ final class GroovySorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  def "issue 164 inserts only missing configuration blank lines in sorted blocks"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      dependencies{
+          api libs.foo // Keep this trailing comment in place.
+          /* Keep this multiline comment with the implementation dependency.
+
+             Its internal blank line is not configuration separation. */
+          implementation 'g:bar:1'
+
+          testImplementation libs.baz
+      }
+
+      dependencies {
+        api "g:foo:1"
+
+        implementation libs.bar
+      }
+      ''', lineSeparator)
+    def expected = normalize('''\
+      dependencies{
+          api libs.foo // Keep this trailing comment in place.
+
+          /* Keep this multiline comment with the implementation dependency.
+
+             Its internal blank line is not configuration separation. */
+          implementation 'g:bar:1'
+
+          testImplementation libs.baz
+      }
+
+      dependencies {
+        api "g:foo:1"
+
+        implementation libs.bar
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = GroovySorter.of(buildScript, config, lineSeparator)
+
+    expect:
+    !sorter.isSorted()
+    sorter.rewritten() == expected
+
+    when:
+    Files.writeString(buildScript, expected)
+    def sorted = GroovySorter.of(buildScript, config, lineSeparator)
+
+    then:
+    sorted.isSorted()
+
+    when:
+    sorted.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "issue 164 leaves configuration spacing alone when blank lines are disabled"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      dependencies{
+          api libs.foo
+          implementation 'g:bar:1'
+
+
+          testImplementation libs.baz
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+    def sorter = GroovySorter.of(buildScript, new Sorter.Config(false), lineSeparator)
+
+    expect:
+    sorter.isSorted()
+    Files.readString(buildScript) == fileContent
+
+    when:
+    sorter.rewritten()
+
+    then:
+    thrown(AlreadyOrderedException)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
   def "will not sort already sorted build script"() {
     given:
     def buildScript = dir.resolve('build.gradle')
