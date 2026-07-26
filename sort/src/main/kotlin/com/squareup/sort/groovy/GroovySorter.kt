@@ -17,11 +17,13 @@ import com.squareup.sort.Ordering
 import com.squareup.sort.RewrittenBlock
 import com.squareup.sort.Sorter
 import com.squareup.sort.Texts
+import com.squareup.sort.missingBlankLineReplacements
 import com.squareup.utils.ifNotEmpty
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
+import org.antlr.v4.runtime.Token
 import org.antlr.v4.runtime.TokenStreamRewriter
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 import java.nio.file.Files
@@ -44,15 +46,20 @@ public class GroovySorter private constructor(
   private val dependencyComparator = DependencyComparator()
   private val dependenciesByConfiguration =
     mutableMapOf<String, MutableList<GroovyDependencyDeclaration>>()
+  private val dependenciesInSource = mutableListOf<Triple<String, Token, Token>>()
   private val ordering = Ordering<GroovyDependencyDeclaration> { first, second ->
     tokens.getText(first.declaration) == tokens.getText(second.declaration)
   }
+  private var hasRequiredBlankLines = true
 
   private fun collectDependency(
     configuration: String,
     dependencyDeclaration: GroovyDependencyDeclaration
   ) {
     ordering.add(dependencyDeclaration)
+    dependenciesInSource += Triple(
+      configuration, dependencyDeclaration.declaration.start, dependencyDeclaration.declaration.stop
+    )
     dependenciesByConfiguration.merge(
       configuration,
       mutableListOf(dependencyDeclaration)
@@ -79,7 +86,7 @@ public class GroovySorter private constructor(
   }
 
   /** Returns `true` if this file's dependencies are already sorted correctly, or if there are no dependencies. */
-  override fun isSorted(): Boolean = ordering.isAlreadyOrdered()
+  override fun isSorted(): Boolean = ordering.isAlreadyOrdered() && hasRequiredBlankLines
 
   /** Returns `true` if there were errors parsing the build script. */
   override fun hasParseErrors(): Boolean = errorListener.errorMessages.isNotEmpty()
@@ -139,10 +146,21 @@ public class GroovySorter private constructor(
     // Leave sorted blocks untouched so their existing formatting is preserved.
     if (!rewrittenBlock.isAlreadyOrdered) {
       rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+    } else if (config.insertBlankLines) {
+      val replacements = missingBlankLineReplacements(
+        dependenciesInSource, tokens, lineSeparator
+      )
+      if (replacements == null) {
+        rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+      } else {
+        replacements.forEach { (token, replacement) -> rewriter.replace(token, replacement) }
+      }
+      if (replacements == null || replacements.isNotEmpty()) hasRequiredBlankLines = false
     }
 
     // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
     dependenciesByConfiguration.clear()
+    dependenciesInSource.clear()
   }
 
   private fun dependenciesBlock(ctx: DependenciesContext): RewrittenBlock {

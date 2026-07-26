@@ -1,6 +1,7 @@
 # gradle-dependencies-sorter
 
 ## Unreleased
+* [Fix]: insert configured blank lines when dependency declarations are already sorted.
 * [Fix]: preserve indentation in nested dependencies blocks.
 * [Fix]: fix partial matches in the dependency types being sorted backwards.
 * [Fix]: add missing dependency types `androidTestCompileOnly` and `androidTestRuntimeOnly`.

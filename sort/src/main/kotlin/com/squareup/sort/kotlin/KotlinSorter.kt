@@ -17,6 +17,7 @@ import com.squareup.sort.Ordering
 import com.squareup.sort.RewrittenBlock
 import com.squareup.sort.Sorter
 import com.squareup.sort.Texts
+import com.squareup.sort.missingBlankLineReplacements
 import com.squareup.utils.ifNotEmpty
 import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CommonTokenStream
@@ -45,6 +46,7 @@ public class KotlinSorter private constructor(
   private val dependencyComparator = DependencyComparator()
   private val mutableDependencies = MutableDependencies()
   private val ordering = Ordering<KotlinDependencyDeclaration>()
+  private var hasRequiredBlankLines = true
 
   /**
    * Returns the sorted build script.
@@ -64,7 +66,7 @@ public class KotlinSorter private constructor(
   }
 
   /** Returns `true` if this file's dependencies are already sorted correctly, or if there are no dependencies. */
-  override fun isSorted(): Boolean = ordering.isAlreadyOrdered()
+  override fun isSorted(): Boolean = ordering.isAlreadyOrdered() && hasRequiredBlankLines
 
   /** Returns `true` if there were errors parsing the build script. */
   override fun hasParseErrors(): Boolean = errorListener.getErrorMessages().isNotEmpty()
@@ -93,6 +95,16 @@ public class KotlinSorter private constructor(
       // Leave sorted blocks untouched so their existing formatting is preserved.
       if (!rewrittenBlock.isAlreadyOrdered) {
         rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+      } else if (config.insertBlankLines) {
+        val replacements = missingBlankLineReplacements(
+          mutableDependencies.declarationsInSource, tokens, lineSeparator
+        )
+        if (replacements == null) {
+          rewriter.replace(ctx.start, ctx.stop, rewrittenBlock.text)
+        } else {
+          replacements.forEach { (token, replacement) -> rewriter.replace(token, replacement) }
+        }
+        if (replacements == null || replacements.isNotEmpty()) hasRequiredBlankLines = false
       }
 
       // Whenever we exit a dependencies block, clear this map. Each block will be treated separately.
@@ -103,12 +115,15 @@ public class KotlinSorter private constructor(
   }
 
   private fun collectDependencies(container: DependencyContainer) {
-    val declarations = container.getDependencyDeclarations().map { KotlinDependencyDeclaration(it) }
+    val declarations = container.getDependencyDeclarationsWithContext().map {
+      KotlinDependencyDeclaration(it.declaration) to it.statement
+    }
     mutableDependencies.statements += container.getStatements()
 
-    ordering.addAll(declarations)
+    ordering.addAll(declarations.map { it.first })
 
-    declarations.forEach { decl ->
+    declarations.forEach { (decl, statement) ->
+      mutableDependencies.declarationsInSource += Triple(decl.configuration, statement.start, statement.stop)
       mutableDependencies.dependenciesByConfiguration.merge(
         decl.configuration,
         mutableListOf(decl)
@@ -230,6 +245,7 @@ public class KotlinSorter private constructor(
 
 private class MutableDependencies(
   val dependenciesByConfiguration: MutableMap<String, MutableList<KotlinDependencyDeclaration>> = mutableMapOf(),
+  val declarationsInSource: MutableList<Triple<String, Token, Token>> = mutableListOf(),
   val expressions: MutableList<String> = mutableListOf(),
   val statements: MutableList<StatementContext> = mutableListOf(),
 ) {
@@ -238,6 +254,7 @@ private class MutableDependencies(
 
   fun clear() {
     dependenciesByConfiguration.clear()
+    declarationsInSource.clear()
     expressions.clear()
     statements.clear()
   }
