@@ -164,6 +164,37 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  def "can sort a BOM qualified by project dependencies"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContent = normalize(
+      '''\
+          dependencies {
+            implementation(libs.ktor.client.core)
+            implementation(project.dependencies.platform(libs.ktor.bom))
+            implementation(libs.koin.core)
+          }''',
+      lineSeparator
+    )
+    Files.writeString(buildScript, fileContent)
+    def config = new Sorter.Config(true)
+    def sorter = KotlinSorter.of(buildScript, config, lineSeparator)
+
+    expect:
+    extractLineSeparators(sorter.rewritten()).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+          dependencies {
+            implementation(project.dependencies.platform(libs.ktor.bom))
+            implementation(libs.koin.core)
+            implementation(libs.ktor.client.core)
+          }'''.stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
   def "can sort testFixtures correctly"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
