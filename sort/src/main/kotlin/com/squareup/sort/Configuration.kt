@@ -27,6 +27,12 @@ internal class Configuration(
       "androidTestImplementation" to { Configuration("androidTestImplementation", 12) },
 	  "androidTestCompileOnly" to { Configuration("androidTestCompileOnly", 13) },
 	  "androidTestRuntimeOnly" to { Configuration("androidTestRuntimeOnly", 14) },
+		"detektPlugins" to { Configuration("detektPlugins", 15) },
+		"debugRuntimeOnly" to { Configuration("debugRuntimeOnly", 16) },
+		"releaseRuntimeOnly" to { Configuration("releaseRuntimeOnly", 17) },
+		"ktlintRuleset" to { Configuration("ktlintRuleset", 18) },
+		"ksp" to { Configuration("ksp", 19) },
+		"dokkaPlugin" to { Configuration("dokkaPlugin", 20) },
     )
 
     fun of(configurationName: String): Configuration? {
