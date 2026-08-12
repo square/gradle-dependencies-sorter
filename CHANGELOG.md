@@ -6,6 +6,7 @@
 * [Fix]: preserve indentation in nested dependencies blocks.
 * [Fix]: fix partial matches in the dependency types being sorted backwards.
 * [Fix]: add missing dependency types `androidTestCompileOnly` and `androidTestRuntimeOnly`.
+* [Chore]: Update kotlin-editor to 0.26, which includes fixes for things like multi-dollar strings and lower Kotlin language version targeting to avoid kotlin-metadata-jvm conflicts and better Gradle 8.x compat.
 
 ## Version 0.20.0
 * [Feat]: bump kotlin-editor.

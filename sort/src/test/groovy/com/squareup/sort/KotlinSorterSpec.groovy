@@ -1465,6 +1465,71 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
+  // https://github.com/square/gradle-dependencies-sorter/issues/154
+  def "can sort dependencies in a script containing a multi-dollar string"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    def fileContents = normalize('''\
+      val generatedSource = $$"""
+      |    /**
+      |     * The full $$description text as a string.
+      |     */
+      |    val text by lazy { checkNotNull(javaClass.getResource("/$$resourcePath/$id")).readText() }
+      |}
+      |
+      |internal object $${className}Serializer : KSerializer<$$className> by $$className.generatedSerializer() {
+      |    override fun deserialize(decoder: Decoder): $$className {
+      |        require(decoder is YamlInput) {
+      |            "Only YAML input is supported."
+      |        }
+      |
+      |        val node = requireNotNull(decoder.node as? YamlScalar) {
+      |            "Only scalar input is supported."
+      |        }
+      |
+      |        return checkNotNull($$className.forId(node.content)) {
+      |            "No SPDX license found for ID '${node.content}'."
+      |        }
+      |    }
+      |}
+      |
+      """.trimMargin()
+
+      dependencies {
+        implementation("b")
+        implementation("a")
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContents)
+    def unsortedDependencies = normalize('''\
+      dependencies {
+        implementation("b")
+        implementation("a")
+      }''', lineSeparator)
+    def sortedDependencies = normalize('''\
+      dependencies {
+        implementation("a")
+        implementation("b")
+      }''', lineSeparator)
+    def expected = fileContents.replace(unsortedDependencies, sortedDependencies)
+
+    when:
+    def sorter = KotlinSorter.of(buildScript, new Sorter.Config(true), lineSeparator)
+
+    then:
+    !sorter.hasParseErrors()
+    sorter.getParseError() == null
+
+    when:
+    def newScript = sorter.rewritten()
+
+    then:
+    assertThat(newScript).isEqualTo(expected)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
   private static List<String> trimmedLinesOf(CharSequence content) {
     // to lines and trim whitespace off end
     return content.readLines().collect { it.replaceFirst('\\s+\$', '') }
