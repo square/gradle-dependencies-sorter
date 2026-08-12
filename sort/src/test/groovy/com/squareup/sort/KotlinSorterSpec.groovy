@@ -721,13 +721,20 @@ class KotlinSorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
-  def "colons have higher precedence than hyphen"() {
+  def "project path separators sort after hyphens without changing external coordinates"() {
     given:
     def buildScript = dir.resolve('build.gradle.kts')
     def fileContents = normalize('''\
           dependencies {
-            api(project(":marvin-robot:so-sad"))
-            api(project(":marvin:robot:so-sad"))
+            api(project(":feature:foo:shared"))
+            api(project(":feature:foo-v2"))
+            api(project(":feature:foo"))
+            api(project("relative:foo:shared"))
+            api(project("relative:foo-v2"))
+            api(":foo-bar:baz")
+            api("foo-bar:baz")
+            api(":foo:bar-baz")
+            api("foo:bar:baz")
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContents)
@@ -739,8 +746,15 @@ class KotlinSorterSpec extends Specification {
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
-            api(project(":marvin:robot:so-sad"))
-            api(project(":marvin-robot:so-sad"))
+            api(project(":feature:foo"))
+            api(project(":feature:foo-v2"))
+            api(project(":feature:foo:shared"))
+            api(project("relative:foo-v2"))
+            api(project("relative:foo:shared"))
+            api(":foo:bar-baz")
+            api(":foo-bar:baz")
+            api("foo:bar:baz")
+            api("foo-bar:baz")
           }
         '''.stripIndent()
     )).inOrder()
