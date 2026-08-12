@@ -33,3 +33,5 @@ jobs:
 
       - name: Run tests
         run: './gradlew check -s'
+        env:
+          ORG_GRADLE_PROJECT_RELEASE_SIGNING_ENABLED: 'false'
