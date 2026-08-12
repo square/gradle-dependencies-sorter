@@ -1,11 +1,14 @@
 # gradle-dependencies-sorter
 
 ## Unreleased
+
+## Version 0.21.0
 * [Feat]: sort dependency `constraints` blocks by default.
 * [Feat]: add `--block` and `blocks(...)` for sorting custom Gradle DSL blocks in Kotlin and Groovy build scripts.
 * [Fix]: preserve indentation in nested dependencies blocks.
 * [Fix]: fix partial matches in the dependency types being sorted backwards.
 * [Fix]: add missing dependency types `androidTestCompileOnly` and `androidTestRuntimeOnly`.
+* [Fix]: sort nested project paths after hyphenated siblings.
 * [Chore]: Update kotlin-editor to 0.26, which includes fixes for things like multi-dollar strings and lower Kotlin language version targeting to avoid kotlin-metadata-jvm conflicts and better Gradle 8.x compat.
 
 ## Version 0.20.0
