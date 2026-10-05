@@ -22,11 +22,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
 
-      - name: Set up JDK 11
+      - name: Set up JDKs
+        # 11 is still the toolchain target for the published CLI artifact
+        # (BaseConvention). 17 is listed last so it becomes JAVA_HOME: Gradle
+        # 9 requires 17+ to run at all, and the functional tests in
+        # sort-dependencies-gradle-plugin spin up a real nested Gradle build
+        # via TestKit, which needs that same 17+ JVM to launch.
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
         with:
           distribution: 'zulu'
-          java-version: 11
+          java-version: |
+            11
+            17
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # 6.1.0

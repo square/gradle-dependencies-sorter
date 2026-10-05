@@ -30,9 +30,6 @@ tasks.named('shadowJar', ShadowJar) {
   description = 'Produces a fat jar'
   reproducibleFileOrder = true
 
-  from sourceSets.main.output
-  from project.configurations.runtimeClasspath
-
   exclude 'META-INF/maven/**'
 }
 

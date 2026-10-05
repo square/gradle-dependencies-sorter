@@ -49,6 +49,9 @@ class BaseConvention : Plugin<Project> {
       // JUnit5 / Jupiter Platform stuff
       add("testImplementation", versionCatalog.findLibrary("junit-api").orElseThrow())
       add("testRuntimeOnly", versionCatalog.findLibrary("junit-engine").orElseThrow())
+      // Gradle 9 no longer adds this to the test runtime classpath implicitly.
+      // https://docs.gradle.org/current/userguide/upgrading_major_version_9.html
+      add("testRuntimeOnly", versionCatalog.findLibrary("junit-platform-launcher").orElseThrow())
 
       add("testImplementation", versionCatalog.findLibrary("truth").orElseThrow())
     }

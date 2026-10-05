@@ -1,3 +1,5 @@
+import org.gradle.jvm.toolchain.JavaLanguageVersion
+
 plugins {
   id 'com.squareup.plugin'
   alias(libs.plugins.dokka)
@@ -24,6 +26,14 @@ tasks.named('test') {
   inputs.property('version', version)
 
   systemProperty 'rootDir', rootDir.absolutePath
+
+  // FunctionalSpec drives a real nested Gradle build via TestKit. That nested
+  // build runs in-process on whatever JVM forked this test, so it needs a
+  // launcher new enough to run Gradle itself (9+ requires 17+) — independent
+  // of the Java target this module's own sources compile to.
+  javaLauncher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
 }
 
 tasks.named('processResources') {

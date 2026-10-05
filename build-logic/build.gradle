@@ -23,12 +23,16 @@ gradlePlugin {
 }
 
 tasks.withType(JavaCompile).configureEach {
-  options.release = 11
+  // This is build-time tooling, not the published CLI artifact (that stays on
+  // the "java" version from libs.versions.toml via BaseConvention's toolchain).
+  // Bumped to 17 because the shadow-gradle-plugin dependency below only
+  // publishes a Java 17+ compatible variant from 9.x onward.
+  options.release = 17
 }
 
 kotlin {
   compilerOptions {
-    jvmTarget = JvmTarget.JVM_11
+    jvmTarget = JvmTarget.JVM_17
   }
 }
 
