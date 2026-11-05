@@ -9,7 +9,10 @@ kotlin {
 }
 
 dependencies {
-  api libs.grammar
+  api(libs.grammar) {
+    // The grammar is generated Java; its build's Kotlin dependencies are not needed here.
+    exclude group: 'org.jetbrains.kotlin'
+  }
   api libs.kotlinEditor.core
 
   testImplementation libs.spock

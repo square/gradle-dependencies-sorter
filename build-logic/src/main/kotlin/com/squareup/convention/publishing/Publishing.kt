@@ -6,6 +6,7 @@ import org.gradle.api.publish.maven.MavenPom
 
 internal object Publishing {
 
+  /** Other configuration is in `gradle.properties`. */
   fun setup(project: Project): Unit = project.run {
     project.pluginManager.withPlugin("com.vanniktech.maven.publish") {
       extensions.getByType(MavenPublishBaseExtension::class.java).pom(::setupPom)

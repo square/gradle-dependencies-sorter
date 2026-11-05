@@ -8,7 +8,9 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.options.versionOption
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.path
@@ -72,6 +74,15 @@ class SortCommand(
     help = "When enabled, blank lines will not be inserted between different dependency configurations. False by default",
   ).flag(default = false)
 
+  private val blocks by option(
+    "--block",
+    help = "Also sort direct calls in a matching Gradle DSL block. May be repeated.",
+  ).multiple().validate { paths ->
+    require(paths.all(::isValidBlockPath)) {
+      "Each block path must contain one or more non-blank segments separated by dots."
+    }
+  }
+
   val mode by option(
     "-m", "--mode",
     help = "Mode: [sort, check]. Defaults to 'sort'. Check will report if a file is already sorted."
@@ -125,8 +136,7 @@ class SortCommand(
     var successCount = 0
     var parseErrorCount = 0
     var alreadySortedCount = 0
-    val insertBlankLines = !noBlankLines
-    val config = Sorter.Config(insertBlankLines = insertBlankLines)
+    val config = sorterConfig()
 
     filesToSort.parallelStream().forEach { file ->
       try {
@@ -169,8 +179,7 @@ class SortCommand(
     val notSorted = mutableListOf<Path>()
     var parseErrorCount = 0
     var alreadySortedCount = 0
-    val insertBlankLines = !noBlankLines
-    val config = Sorter.Config(insertBlankLines = insertBlankLines)
+    val config = sorterConfig()
 
     filesToSort.parallelStream().forEach { file ->
       try {
@@ -241,6 +250,13 @@ class SortCommand(
       NOT_SORTED
     }
   }
+
+  private fun sorterConfig(): Sorter.Config {
+    return Sorter.Config(
+      insertBlankLines = !noBlankLines,
+      blocks = blocks.toSet(),
+    )
+  }
 }
 
 enum class Context {
@@ -269,4 +285,8 @@ private fun logger(quiet: Boolean): DelegatingLogger {
     file = createTempFile(),
     quiet = quiet,
   )
+}
+
+private fun isValidBlockPath(path: String): Boolean {
+  return path.isNotBlank() && path.split('.').none(String::isBlank)
 }

@@ -2,12 +2,16 @@ package com.squareup.sort.kotlin
 
 import cash.grammar.kotlindsl.model.DependencyDeclaration.Capability
 import cash.grammar.kotlindsl.model.DependencyDeclaration.Type
+import com.squareup.cash.grammar.KotlinParser.StatementContext
 import com.squareup.sort.DependencyDeclaration
 import cash.grammar.kotlindsl.model.DependencyDeclaration as ModelDeclaration
 
 internal class KotlinDependencyDeclaration(
   private val base: ModelDeclaration,
+  val statement: StatementContext?,
 ) : DependencyDeclaration {
+
+  constructor(base: ModelDeclaration) : this(base, null)
 
   val configuration = base.configuration
 

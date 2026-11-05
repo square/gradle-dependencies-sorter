@@ -24,6 +24,9 @@ This JVM CLI app and companion Gradle plugin can sort the dependencies of a `bui
 # Check sort status
 ./path/to/sort -m check <paths as above>
 ./path/to/sort --mode check <paths as above>
+
+# Sort direct calls in matching Gradle DSL blocks
+./path/to/sort --block sqldelight.databases.create .
 ```
 
 ### Gradle plugin
@@ -42,9 +45,6 @@ plugins {
 #### Sort it
 
 ```shell
-./gradlew :my:app:sortDependencies
-
-# Identical to the above
 ./gradlew :my:app:sortDependencies
 ```
 
@@ -65,10 +65,49 @@ sortDependencies {
   // When true, a blank line will be inserted between dependencies of different configurations. Enabled by default.
   insertBlankLines = false
 
+  // Sort direct calls in matching Gradle DSL blocks.
+  blocks("sqldelight.databases.create")
+
   // true by default, meaning that 'checkSortDependencies' is a dependency of 'check'
   check(true)
 }
 ```
+
+Dependency declarations inside any `dependencies {}` block are always sorted, including nested blocks such as `kotlin.sourceSets.commonMain.dependencies`. Calls inside `dependencies.constraints {}` are also sorted without any additional configuration. Other Gradle DSL blocks must be configured with `blocks(...)` or the CLI's `--block` option.
+
+For example, `blocks("sqldelight.databases.create")` changes this:
+
+```kotlin
+sqldelight {
+  databases {
+    create("Database") {
+      dependency(project(":schema:shared"))
+      dependency(project(":schema:analytics"))
+    }
+  }
+}
+```
+
+to this:
+
+```kotlin
+sqldelight {
+  databases {
+    create("Database") {
+      dependency(project(":schema:analytics"))
+      dependency(project(":schema:shared"))
+    }
+  }
+}
+```
+
+`sqldelight.databases.create` matches both `create("main") {}` and `create<Database>("main") {}`, including when they are nested inside another block such as `subprojects {}`.
+
+Pass several paths to `blocks(...)` to configure more than one kind of block.
+
+Only calls directly inside the matched block are sorted. Other statements stay in place.
+
+For SQLDelight's Groovy `Database {}` syntax, you would use `blocks("sqldelight.databases.Database")` instead.
 
 ## Test it
 

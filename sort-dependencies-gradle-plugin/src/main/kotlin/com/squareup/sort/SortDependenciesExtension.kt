@@ -3,6 +3,7 @@ package com.squareup.sort
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import java.io.BufferedReader
 import javax.inject.Inject
 
@@ -13,6 +14,9 @@ import javax.inject.Inject
  *
  *   // When true, a blank line will be inserted between dependencies of different configurations. Enabled by default.
  *   insertBlankLines = false
+ *
+ *   // Sort direct calls in matching Gradle DSL blocks
+ *   blocks("sqldelight.databases.create")
  *
  *   // true by default, meaning that 'checkSortDependencies' is a dependency of 'check'
  *   check(true)
@@ -38,6 +42,15 @@ abstract class SortDependenciesExtension @Inject constructor(
   val insertBlankLines: Property<Boolean> = objects
     .property(Boolean::class.java)
     .convention(true)
+
+  internal val blocks: SetProperty<String> = objects
+    .setProperty(String::class.java)
+    .convention(emptySet())
+
+  /** Sorts direct calls in Gradle DSL blocks matching any of [paths]. */
+  fun blocks(vararg paths: String) {
+    blocks.addAll(*paths)
+  }
 
   internal val check: Property<Boolean> = objects.property(Boolean::class.java).convention(true)
 

@@ -70,6 +70,10 @@ abstract class SortDependenciesTask @Inject constructor(
           if (!insertBlankLines) {
             add("--no-blank-lines")
           }
+
+          blocks.getOrElse(emptySet()).sorted().forEach { block ->
+            option("--block", block)
+          }
         }
       }
     }

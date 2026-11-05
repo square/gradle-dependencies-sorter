@@ -32,21 +32,25 @@ internal interface DependencyDeclaration {
   fun comparisonText(): String
 
   /**
-   * Colons should sort "higher" than hyphens. The comma's ASCII value
-   * is 44, the hyphen's is 45, and the colon's is 58. We replace
-   * colons with commas and then rely on natural sort order from
-   * there.
+   * Colons in external dependency coordinates should sort "higher" than hyphens. The comma's ASCII
+   * value is 44, the hyphen's is 45, and the colon's is 58. We replace those colons with commas and
+   * then rely on natural sort order from there.
    *
-   * For example, consider ':foo-bar' vs. ':foo:bar'. Before this
-   * transformation, ':foo-bar' will appear before ':foo:bar'. But
-   * after it, we compare ',foo,bar' to ',foo-bar', which gives the
-   * desired sort ordering.
+   * For example, consider 'foo-bar:baz' vs. 'foo:bar:baz'. Before this transformation,
+   * 'foo-bar:baz' will appear before 'foo:bar:baz'. But after it, we compare 'foo-bar,baz' to
+   * 'foo,bar,baz', which gives the desired sort ordering.
    *
-   * Similarly, single and double quotes have different ASCII values,
-   * but we don't care about that for our purposes.
+   * Project path colons remain unchanged so nested paths sort after hyphenated sibling paths.
+   * Similarly, single and double quotes have different ASCII values, but we don't care about that
+   * for our purposes.
    */
   fun String.replaceHyphens(): String {
     // TODO maybe I should make this an ABC and this function protected.
-    return replace(':', ',').replace("'", "\"")
+    val normalizedQuotes = replace("'", "\"")
+    return if (this@DependencyDeclaration.isProjectDependency()) {
+      normalizedQuotes
+    } else {
+      normalizedQuotes.replace(':', ',')
+    }
   }
 }

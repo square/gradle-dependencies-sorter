@@ -12,13 +12,16 @@ public interface Sorter {
   public fun hasParseErrors(): Boolean
   public fun getParseError(): BuildScriptParseException?
 
-  public data class Config(
+  public data class Config @JvmOverloads constructor(
     public val insertBlankLines: Boolean,
+    /** Additional Gradle DSL block paths whose direct calls should be sorted. */
+    public val blocks: Set<String> = emptySet(),
   )
 
   public companion object {
     public fun defaultConfig(): Config = Config(
       insertBlankLines = true,
+      blocks = emptySet(),
     )
 
     @JvmOverloads

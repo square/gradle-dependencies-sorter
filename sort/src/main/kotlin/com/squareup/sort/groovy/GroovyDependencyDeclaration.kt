@@ -71,7 +71,9 @@ internal class GroovyDependencyDeclaration(
         // If project(path: 'foo') syntax is used, take the path value.
         // Else, if project('foo') syntax is used, take the ID.
         projectMapEntry().firstOrNull { it.key.text == "path:" }?.value?.text
-          ?: ID().text
+          ?: ID()?.text
+          ?: PROJECT_ACCESSOR()?.text
+          ?: text
       }
 
       isFileDependency() -> dependency.fileDependency().ID().text
@@ -91,13 +93,7 @@ internal class GroovyDependencyDeclaration(
         else -> error("Unknown declaration kind. Was ${declaration.text}.")
       }
 
-      val dependencyKind = when (declaration) {
-        is NormalDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
-        is EnforcedPlatformDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
-        is PlatformDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
-        is TestFixturesDeclarationContext -> DependencyKind.of(declaration.dependency(), filePath)
-        else -> error("Unknown declaration kind. Was ${declaration.text}.")
-      }
+      val dependencyKind = DependencyKind.of(dependency, filePath)
 
       return GroovyDependencyDeclaration(declaration, dependency, declarationKind, dependencyKind)
     }

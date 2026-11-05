@@ -109,6 +109,70 @@ final class FunctionalSpec extends Specification {
       }""").stripIndent()
   }
 
+  def "can configure blocks"() {
+    given:
+    def buildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(buildScript, normalize("""\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      sortDependencies {
+        blocks("configurations", "tasks")
+      }
+
+      repositories {
+        maven { url = uri("$REPO") }
+      }
+
+      configurations {
+        create("z")
+        create("a")
+      }
+
+      tasks {
+        register("z")
+        register("a")
+      }
+      """).stripIndent())
+
+    expect: 'The check task sees the custom block'
+    buildAndFail(dir, 'checkSortDependencies')
+
+    when:
+    build(dir, 'sortDependencies')
+
+    then:
+    buildScript.text == normalize("""\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      sortDependencies {
+        blocks("configurations", "tasks")
+      }
+
+      repositories {
+        maven { url = uri("$REPO") }
+      }
+
+      configurations {
+        create("a")
+        create("z")
+      }
+
+      tasks {
+        register("a")
+        register("z")
+      }
+      """).stripIndent()
+
+    and:
+    build(dir, 'checkSortDependencies')
+  }
+
   def "can sort build.gradle.kts with string property declaration"() {
     given: 'A build script with unsorted dependencies'
     def buildScript = dir.resolve('build.gradle.kts')
@@ -253,6 +317,44 @@ final class FunctionalSpec extends Specification {
 
     expect: 'We sort dependencies'
     build(dir, 'sortDependencies', '--verbose')
+  }
+
+  def "does not register tasks on a project without a build script"() {
+    given: 'A multi-project build whose intermediate `:sub` project has no build script'
+    def settingsScript = dir.resolve('settings.gradle.kts')
+    Files.writeString(settingsScript,
+      """\
+        dependencyResolutionManagement {
+          repositories {
+            mavenCentral()
+            maven { url = uri("$REPO") }
+          }
+        }
+
+        include(":sub:project")""".stripIndent()
+    )
+    def rootBuildScript = dir.resolve('build.gradle.kts')
+    Files.writeString(rootBuildScript,
+      '''\
+      plugins {
+        `java-library`
+        id("com.squareup.sort-dependencies")
+      }
+
+      subprojects {
+        apply(plugin = "com.squareup.sort-dependencies")
+      }'''.stripIndent()
+    )
+    def subproject = dir.resolve('sub/project/build.gradle.kts')
+    Files.createDirectories(subproject.parent)
+    Files.createFile(subproject)
+
+    when: 'We check dependency sorting across the build'
+    def result = build(dir, 'checkSortDependencies')
+
+    then: 'The scriptless container project registers no task, while the leaf project does'
+    result.task(':sub:checkSortDependencies') == null
+    result.task(':sub:project:checkSortDependencies') != null
   }
 
   def "no blank lines between different configurations when flag is disabled"() {

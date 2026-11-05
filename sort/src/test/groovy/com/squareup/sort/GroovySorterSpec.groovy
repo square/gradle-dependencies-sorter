@@ -52,6 +52,10 @@ final class GroovySorterSpec extends Specification {
             // Here's a multi-line comment
             // Here's the second line of the comment
             implementation deps.foo
+            api projects.foo
+            implementation projects.foo.internal
+            api projects.bar
+            implementation projects.bar.internal
 
             /*
              * Here's a multiline comment.
@@ -97,9 +101,13 @@ final class GroovySorterSpec extends Specification {
 
           dependencies {
             api project(":marvin")
+            api projects.bar
+            api projects.foo
             api 'zzz:yyy:1.0'
 
             implementation project(':milliways')
+            implementation projects.bar.internal
+            implementation projects.foo.internal
             implementation 'a:1.0'
             implementation 'b:1.0'
             implementation 'heart:of-gold:1.0'
@@ -306,13 +314,20 @@ final class GroovySorterSpec extends Specification {
     lineSeparator << ['\n', '\r\n']
   }
 
-  def "colons have higher precedence than hyphen"() {
+  def "project path separators sort after hyphens without changing external coordinates"() {
     given:
     def buildScript = dir.resolve('build.gradle')
     def fileContent = normalize('''\
           dependencies {
-            api project(":marvin-robot:so-sad")
-            api project(":marvin:robot:so-sad")
+            api project(":feature:foo:shared")
+            api project(":feature:foo-v2")
+            api project(":feature:foo")
+            api project("relative:foo:shared")
+            api project("relative:foo-v2")
+            api ":foo-bar:baz"
+            api "foo-bar:baz"
+            api ":foo:bar-baz"
+            api "foo:bar:baz"
           }
         ''', lineSeparator)
     Files.writeString(buildScript, fileContent)
@@ -324,8 +339,15 @@ final class GroovySorterSpec extends Specification {
     assertThat(trimmedLinesOf(sorter.rewritten())).containsExactlyElementsIn(trimmedLinesOf(
       '''\
           dependencies {
-            api project(":marvin:robot:so-sad")
-            api project(":marvin-robot:so-sad")
+            api project(":feature:foo")
+            api project(":feature:foo-v2")
+            api project(":feature:foo:shared")
+            api project("relative:foo-v2")
+            api project("relative:foo:shared")
+            api ":foo:bar-baz"
+            api ":foo-bar:baz"
+            api "foo:bar:baz"
+            api "foo-bar:baz"
           }
         '''.stripIndent()
     )).inOrder()
@@ -682,6 +704,7 @@ final class GroovySorterSpec extends Specification {
     def fileContent = normalize('''\
         dependencies {
           implementation projects.foo.internal
+          implementation project(":marvin")
           implementation projects.bar.public
           implementation (libs.baz.ui) {
             artifact {
@@ -705,6 +728,10 @@ final class GroovySorterSpec extends Specification {
     assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
       '''\
         dependencies {
+          implementation project(":marvin")
+          implementation projects.bar.public
+          implementation projects.core
+          implementation projects.foo.internal
           implementation libs.androidx.constraintLayout
           implementation (libs.baz.ui) {
             artifact {
@@ -712,11 +739,631 @@ final class GroovySorterSpec extends Specification {
             }
           }
           implementation libs.common.view
-          implementation projects.bar.public
-          implementation projects.core
-          implementation projects.foo.internal
         }'''.stripIndent()
     )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  // https://github.com/square/gradle-dependencies-sorter/issues/95
+  def "sorts Gradle dependency constraints"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      dependencies {
+        constraints {
+          runtime 'g:c:1'
+          // Required by the Gradle plugin.
+          api("g:b:1") {
+            because "The plugin loads this dependency directly"
+          }
+          api 'g:a:1'
+        }
+
+        implementation libs.z
+        implementation libs.a
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def newScript = GroovySorter.of(buildScript, new Sorter.Config(true), lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      dependencies {
+        constraints {
+          api 'g:a:1'
+          // Required by the Gradle plugin.
+          api("g:b:1") {
+            because "The plugin loads this dependency directly"
+          }
+          runtime 'g:c:1'
+        }
+
+        implementation libs.a
+        implementation libs.z
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "sorts constraints when the containing dependencies are already ordered"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      dependencies {
+        implementation libs.a
+        implementation libs.z
+
+        constraints {
+          runtime 'g:b:1'
+          api 'g:a:1'
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def newScript = GroovySorter.of(buildScript, new Sorter.Config(true), lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      dependencies {
+        implementation libs.a
+        implementation libs.z
+
+        constraints {
+          api 'g:a:1'
+          runtime 'g:b:1'
+        }
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "matches dotted and nested custom block paths"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      android.sourceSets {
+        zeta()
+        alpha()
+      }
+
+      android {
+        sourceSets {
+          omega()
+          beta()
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['android.sourceSets'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      android.sourceSets {
+        alpha()
+        zeta()
+      }
+
+      android {
+        sourceSets {
+          beta()
+          omega()
+        }
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "sorts a qualified callable custom block"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      subprojects {
+        sqldelight {
+          databases {
+            create("Database") {
+              zeta() // Keep this with zeta.
+              // Keep this with beta.
+              beta {
+                enabled = true
+              }
+              alpha()
+
+              def marker = "fixed"
+
+              delta()
+              charlie()
+            }
+          }
+        }
+
+        other {
+          create("unrelated") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['sqldelight.databases.create'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      subprojects {
+        sqldelight {
+          databases {
+            create("Database") {
+              alpha()
+              // Keep this with beta.
+              beta {
+                enabled = true
+              }
+              zeta() // Keep this with zeta.
+
+              def marker = "fixed"
+
+              charlie()
+              delta()
+            }
+          }
+        }
+
+        other {
+          create("unrelated") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "keeps non-call syntax in place inside a custom block"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      custom { name, value ->
+        zeta()
+        omega()
+
+        alpha()
+          .because("why")
+
+        delta()
+        String marker
+        charlie()
+
+        zulu() /* Keep this comment
+          with zulu. */
+        beta()
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['custom'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      custom { name, value ->
+        omega()
+        zeta()
+
+        alpha()
+          .because("why")
+
+        delta()
+        String marker
+        beta()
+
+        charlie()
+        zulu() /* Keep this comment
+          with zulu. */
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "sorts command calls with bare arguments"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      custom {
+        zeta value
+        enabled true
+        alpha value
+
+        String marker
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['custom'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      custom {
+        alpha value
+        enabled true
+        zeta value
+
+        String marker
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "keeps control flow and typed declarations in place"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      custom {
+        zeta()
+        if (enabled) {
+          marker()
+        }
+        omega()
+        alpha()
+
+        delta()
+        String[] values
+        charlie()
+        beta()
+
+        echo()
+        Map<String, String> mapping
+        gamma()
+        foxtrot()
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['custom'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      custom {
+        zeta()
+        if (enabled) {
+          marker()
+        }
+        alpha()
+        delta()
+
+        omega()
+        String[] values
+        beta()
+        charlie()
+
+        echo()
+        Map<String, String> mapping
+        foxtrot()
+        gamma()
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "does not inherit block paths through anonymous closures"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      outer {
+        def action = {
+          target {
+            zeta()
+            alpha()
+          }
+        }
+
+        target {
+          zeta()
+          alpha()
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['outer.target'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      outer {
+        def action = {
+          target {
+            zeta()
+            alpha()
+          }
+        }
+
+        target {
+          alpha()
+          zeta()
+        }
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "ignores configured blocks inside slashy strings"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      def fixture() {
+        return /(?s)
+        custom {
+          zeta()
+          alpha()
+        }
+        /
+      }
+
+      def commandFixture() {
+        println /(?s)
+        custom {
+          zeta()
+          alpha()
+        }
+        /
+      }
+
+      custom {
+        zeta()
+        alpha()
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['custom'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      def fixture() {
+        return /(?s)
+        custom {
+          zeta()
+          alpha()
+        }
+        /
+      }
+
+      def commandFixture() {
+        println /(?s)
+        custom {
+          zeta()
+          alpha()
+        }
+        /
+      }
+
+      custom {
+        alpha()
+        zeta()
+      }
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "does not treat division operators as a slashy string"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      foo / bar
+
+      custom {
+        zeta()
+        alpha()
+      }
+
+      baz / qux
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['custom'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      foo / bar
+
+      custom {
+        alpha()
+        zeta()
+      }
+
+      baz / qux
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "ignores configured blocks inside strings"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      def regex = value =~ /(?s)
+      sqldelight {
+        databases {
+          create("regex") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      /
+
+      def dollarSlashy = $/
+      escaped close /$$
+      sqldelight {
+        databases {
+          create("dollar slashy") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      /$
+
+      def buildscriptFixture = """
+      buildscript {
+      """
+
+      def fixture = """
+      sqldelight {
+        databases {
+          create("fixture") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      """
+
+      sqldelight {
+        databases {
+          create("Database") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+
+      def closingFixture = """
+      }
+      """
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['sqldelight.databases.create'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      def regex = value =~ /(?s)
+      sqldelight {
+        databases {
+          create("regex") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      /
+
+      def dollarSlashy = $/
+      escaped close /$$
+      sqldelight {
+        databases {
+          create("dollar slashy") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      /$
+
+      def buildscriptFixture = """
+      buildscript {
+      """
+
+      def fixture = """
+      sqldelight {
+        databases {
+          create("fixture") {
+            zeta()
+            alpha()
+          }
+        }
+      }
+      """
+
+      sqldelight {
+        databases {
+          create("Database") {
+            alpha()
+            zeta()
+          }
+        }
+      }
+
+      def closingFixture = """
+      }
+      """
+      ''', lineSeparator)
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "sorts a configured block inside buildscript"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      buildscript {
+        repositories {
+          zeta()
+          alpha()
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true, ['buildscript.repositories'] as Set)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    newScript == normalize('''\
+      buildscript {
+        repositories {
+          alpha()
+          zeta()
+        }
+      }
+      ''', lineSeparator)
 
     where:
     lineSeparator << ['\n', '\r\n']
@@ -757,8 +1404,8 @@ final class GroovySorterSpec extends Specification {
             dependencies {
               api projects.redwoodLayoutWidget
               implementation projects.redwoodFlexbox
-              implementation projects.redwoodWidgetCompose
               implementation libs.jetbrains.compose.foundation
+              implementation projects.redwoodWidgetCompose
             }
           }
 
@@ -813,16 +1460,16 @@ final class GroovySorterSpec extends Specification {
             dependencies {
               api projects.redwoodLayoutWidget
 
-              implementation libs.jetbrains.compose.foundation
               implementation projects.redwoodFlexbox
               implementation projects.redwoodWidgetCompose
-      }
+              implementation libs.jetbrains.compose.foundation
+            }
           }
 
           androidUnitTest {
             dependencies {
               implementation projects.redwoodLayoutSharedTest
-      }
+            }
           }
         }
       }
@@ -830,6 +1477,40 @@ final class GroovySorterSpec extends Specification {
       android {
         namespace 'app.cash.redwood.layout.composeui'
       }""".stripIndent()
+    )).inOrder()
+
+    where:
+    lineSeparator << ['\n', '\r\n']
+  }
+
+  def "preserves a qualified nested dependencies block name"() {
+    given:
+    def buildScript = dir.resolve('build.gradle')
+    def fileContent = normalize('''\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          implementation libs.z
+          implementation libs.a
+        }
+      }
+      ''', lineSeparator)
+    Files.writeString(buildScript, fileContent)
+
+    when:
+    def config = new Sorter.Config(true)
+    def newScript = GroovySorter.of(buildScript, config, lineSeparator).rewritten()
+
+    then:
+    extractLineSeparators(newScript).every { it == lineSeparator }
+    assertThat(trimmedLinesOf(newScript)).containsExactlyElementsIn(trimmedLinesOf(
+      '''\
+      kotlin {
+        sourceSets.commonMain.dependencies {
+          implementation libs.a
+          implementation libs.z
+        }
+      }
+      '''.stripIndent()
     )).inOrder()
 
     where:

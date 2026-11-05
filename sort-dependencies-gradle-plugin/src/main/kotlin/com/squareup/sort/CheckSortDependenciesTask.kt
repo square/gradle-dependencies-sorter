@@ -58,6 +58,10 @@ abstract class CheckSortDependenciesTask @Inject constructor(
           execSpec.args("--verbose")
         }
       }
+
+      blocks.getOrElse(emptySet()).sorted().forEach { block ->
+        execSpec.args("--block", block)
+      }
     }
 
     val resultText = when (result.exitValue) {

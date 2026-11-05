@@ -60,6 +60,59 @@ final class SortCommandSpec extends Specification {
     statusCode == 0
   }
 
+  def "can configure a block in #fileName"() {
+    given:
+    def buildScript = dir.resolve(fileName)
+    Files.writeString(buildScript, '''\
+      configurations {
+        create("z")
+        create("a")
+      }
+      '''.stripIndent())
+    def sortCommand = newSortCommand()
+
+    when:
+    int statusCode = runSortCommand(
+      sortCommand,
+      '--block', 'configurations',
+      buildScript.toString(),
+    )
+
+    then:
+    statusCode == 0
+    Files.readString(buildScript) == '''\
+      configurations {
+        create("a")
+        create("z")
+      }
+      '''.stripIndent()
+
+    where:
+    fileName << ['build.gradle', 'build.gradle.kts']
+  }
+
+  def "rejects invalid block path '#blockPath'"() {
+    given:
+    def sortCommand = newSortCommand()
+
+    when:
+    sortCommand.parse(['--block', blockPath, dir.toString()] as String[], null)
+
+    then:
+    def error = thrown(UsageError)
+    error.message == 'Each block path must contain one or more non-blank segments separated by dots.'
+
+    where:
+    blockPath << [
+      '',
+      ' ',
+      '.dependencies',
+      'dependencies.',
+      'dependencies..constraints',
+      'dependencies. .constraints',
+    ]
+  }
+
   def "fails with no paths passed in"() {
     given:
     def sortCommand = newSortCommand()

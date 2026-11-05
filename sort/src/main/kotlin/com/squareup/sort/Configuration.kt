@@ -25,6 +25,8 @@ internal class Configuration(
       "testCompileOnly" to { Configuration("testCompileOnly", 10) },
       "testRuntimeOnly" to { Configuration("testRuntimeOnly", 11) },
       "androidTestImplementation" to { Configuration("androidTestImplementation", 12) },
+	  "androidTestCompileOnly" to { Configuration("androidTestCompileOnly", 13) },
+	  "androidTestRuntimeOnly" to { Configuration("androidTestRuntimeOnly", 14) },
     )
 
     fun of(configurationName: String): Configuration? {
@@ -85,7 +87,7 @@ internal class Configuration(
       // If each maps to the same configuration, we now differentiate based on whether variants are
       // involved. Non-variants are "higher than" variants.
       if (leftC.variant != null && rightC.variant != null) {
-        return rightC.variant!!.compareTo(leftC.variant!!)
+        return leftC.variant!!.compareTo(rightC.variant!!)
       }
       return if (rightC.variant != null) return -1 else 1
     }

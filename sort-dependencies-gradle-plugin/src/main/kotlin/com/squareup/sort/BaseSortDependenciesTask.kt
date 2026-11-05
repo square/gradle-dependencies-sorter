@@ -3,6 +3,7 @@ package com.squareup.sort
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -25,4 +26,8 @@ abstract class BaseSortDependenciesTask : DefaultTask() {
   @get:Optional
   @get:Input
   abstract val insertBlankLines: Property<Boolean>
+
+  /** Dotted Gradle DSL block paths whose direct calls should be sorted. */
+  @get:Input
+  abstract val blocks: SetProperty<String>
 }
