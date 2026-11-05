@@ -66,7 +66,7 @@ class SortDependenciesPlugin : Plugin<Project> {
     version.set(extension.version)
     insertBlankLines.set(extension.insertBlankLines)
     blocks.set(extension.blocks)
-    markerFile.set(project.layout.buildDirectory.file("sort-dependencies-marker"))
+    fingerprintFile.set(project.layout.buildDirectory.file("sort-dependencies/fingerprint.txt"))
   }
 
   private fun CheckSortDependenciesTask.configure(
