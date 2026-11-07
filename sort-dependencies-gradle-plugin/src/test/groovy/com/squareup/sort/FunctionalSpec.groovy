@@ -467,8 +467,8 @@ final class FunctionalSpec extends Specification {
     """).stripIndent()
   }
 
-  def "is up-to-date when the build script has not changed since the last sort"() {
-    given: 'A build script with sorted dependencies'
+  def "does not sort again until the build script changes"() {
+    given: 'A build script with unsorted dependencies'
     def buildScript = dir.resolve('build.gradle')
     def sorted = normalize("""\
       plugins {
@@ -486,15 +486,25 @@ final class FunctionalSpec extends Specification {
         implementation('com.squareup.okhttp3:okhttp:4.10.0')
         implementation('com.squareup.okio:okio:3.2.0')
       }""").stripIndent()
-    Files.writeString(buildScript, sorted)
+    Files.writeString(buildScript, BUILD_SCRIPT)
 
     when: 'We sort dependencies'
-    def result = build(dir, 'sortDependencies', '--configuration-cache')
+    def result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
 
-    then: 'The task ran'
+    then: 'The sorter rewrote the build script'
     result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains("Sorting '")
+    buildScript.text == sorted
 
     when: 'We sort again without changing anything'
+    result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
+
+    then: 'The task runs, since its input changed during the last run, but does not start the sorter'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains('is unchanged since it was last sorted.')
+    !result.output.contains("Sorting '")
+
+    when: 'We sort once more'
     result = build(dir, 'sortDependencies', '--configuration-cache')
 
     then: 'The task is up-to-date'
@@ -502,10 +512,11 @@ final class FunctionalSpec extends Specification {
 
     when: 'The build script changes and we sort again'
     Files.writeString(buildScript, BUILD_SCRIPT)
-    result = build(dir, 'sortDependencies', '--configuration-cache')
+    result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
 
-    then: 'The task ran again and the dependencies are sorted'
+    then: 'The sorter ran again and the dependencies are sorted'
     result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains("Sorting '")
     buildScript.text == sorted
   }
 

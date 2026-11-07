@@ -67,7 +67,7 @@ class SortDependenciesPlugin : Plugin<Project> {
     version.set(extension.version)
     insertBlankLines.set(extension.insertBlankLines)
     blocks.set(extension.blocks)
-    output.set(layout.buildDirectory.file("sort-dependencies/up-to-date-marker"))
+    output.set(layout.buildDirectory.file("sort-dependencies/sorted-build-script.sha256"))
   }
 
   private fun CheckSortDependenciesTask.configure(
