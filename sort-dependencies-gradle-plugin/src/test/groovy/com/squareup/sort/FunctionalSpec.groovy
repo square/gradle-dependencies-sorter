@@ -467,30 +467,10 @@ final class FunctionalSpec extends Specification {
     """).stripIndent()
   }
 
-  def "skips sorting when the build script has not changed since the last sort"() {
-    given: 'A build script with unsorted dependencies'
+  def "is up-to-date when the build script has not changed since the last sort"() {
+    given: 'A build script with sorted dependencies'
     def buildScript = dir.resolve('build.gradle')
-    Files.writeString(buildScript, BUILD_SCRIPT)
-
-    when: 'We sort dependencies'
-    def result = build(dir, 'sortDependencies', '--configuration-cache')
-
-    then: 'The task ran'
-    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
-
-    when: 'We sort again without changing anything'
-    result = build(dir, 'sortDependencies', '--configuration-cache')
-
-    then: 'The task is skipped'
-    result.task(':sortDependencies').outcome == TaskOutcome.SKIPPED
-
-    when: 'The build script changes and we sort again'
-    Files.writeString(buildScript, BUILD_SCRIPT)
-    result = build(dir, 'sortDependencies', '--configuration-cache')
-
-    then: 'The task ran again and the dependencies are sorted'
-    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
-    buildScript.text == normalize("""\
+    def sorted = normalize("""\
       plugins {
         id 'java-library'
         id 'com.squareup.sort-dependencies'
@@ -506,6 +486,27 @@ final class FunctionalSpec extends Specification {
         implementation('com.squareup.okhttp3:okhttp:4.10.0')
         implementation('com.squareup.okio:okio:3.2.0')
       }""").stripIndent()
+    Files.writeString(buildScript, sorted)
+
+    when: 'We sort dependencies'
+    def result = build(dir, 'sortDependencies', '--configuration-cache')
+
+    then: 'The task ran'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+
+    when: 'We sort again without changing anything'
+    result = build(dir, 'sortDependencies', '--configuration-cache')
+
+    then: 'The task is up-to-date'
+    result.task(':sortDependencies').outcome == TaskOutcome.UP_TO_DATE
+
+    when: 'The build script changes and we sort again'
+    Files.writeString(buildScript, BUILD_SCRIPT)
+    result = build(dir, 'sortDependencies', '--configuration-cache')
+
+    then: 'The task ran again and the dependencies are sorted'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    buildScript.text == sorted
   }
 
   def "sorts again when a sort option changes outside the build script"() {
@@ -543,8 +544,8 @@ final class FunctionalSpec extends Specification {
     when: 'We sort again without changing anything'
     result = build(dir, 'sortDependencies')
 
-    then: 'The task is skipped'
-    result.task(':sortDependencies').outcome == TaskOutcome.SKIPPED
+    then: 'The task is up-to-date'
+    result.task(':sortDependencies').outcome == TaskOutcome.UP_TO_DATE
 
     when: 'Only the sort option changes and we sort again'
     result = build(dir, 'sortDependencies', '-PsortBlocks=configurations')

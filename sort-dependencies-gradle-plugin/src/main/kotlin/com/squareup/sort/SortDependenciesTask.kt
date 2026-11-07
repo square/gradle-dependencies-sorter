@@ -5,9 +5,10 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.*
 import org.gradle.process.ExecOperations
-import java.security.MessageDigest
+import org.gradle.work.DisableCachingByDefault
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Modifies the build script in place, which a cache hit would not")
 abstract class SortDependenciesTask @Inject constructor(
   private val execOps: ExecOperations
 ) : BaseSortDependenciesTask() {
@@ -15,24 +16,17 @@ abstract class SortDependenciesTask @Inject constructor(
   init {
     group = JavaBasePlugin.VERIFICATION_GROUP
     description = "Sorts the dependencies block in a Gradle build script"
-
-    @Suppress("LeakingThis")
-    doNotTrackState("This task modifies build scripts in place.")
-
-    // Skip the expensive javaexec when nothing that affects the result has changed since the last
-    // successful sort: the build script's content, the sorter's classpath, and the sort options.
-    onlyIf { task -> (task as SortDependenciesTask).hasChangedSinceLastSort() }
   }
 
-  // Not really "internal", but the input and the output are the same: this task will potentially modify the build
-  // script in place.
-  @get:Internal
+  // Also modified in place. It is deliberately not declared as an output too: checkSortDependencies reads it, and
+  // Gradle would then require that task to order itself against this one.
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val buildScript: RegularFileProperty
 
-  // Not a real output — doNotTrackState disables all tracking. Holds the fingerprint of the
-  // inputs of the last successful sort, which the onlyIf check compares against.
-  @get:Internal
-  abstract val fingerprintFile: RegularFileProperty
+  // Gradle only considers a task up-to-date if it has outputs. Nothing reads this one; it stays empty.
+  @get:OutputFile
+  abstract val output: RegularFileProperty
 
   @TaskAction fun action() {
     val buildScript = buildScript.get().asFile.absolutePath
@@ -40,10 +34,6 @@ abstract class SortDependenciesTask @Inject constructor(
     val insertBlankLines = insertBlankLines.getOrElse(true)
 
     logger.info("Sorting '$buildScript'.")
-
-    // A failed sort must not leave the previous fingerprint behind.
-    val fingerprintFile = fingerprintFile.get().asFile
-    fingerprintFile.delete()
 
     val version = VersionNumber.parse(version.get().removeSuffix("-SNAPSHOT"))
 
@@ -79,35 +69,7 @@ abstract class SortDependenciesTask @Inject constructor(
       }
     }
 
-    // Fingerprint the sorted result, so the next run is skipped until something changes.
-    fingerprintFile.parentFile.mkdirs()
-    fingerprintFile.writeText(computeFingerprint())
-  }
-
-  private fun hasChangedSinceLastSort(): Boolean {
-    val fingerprintFile = fingerprintFile.get().asFile
-    return !fingerprintFile.exists() || fingerprintFile.readText() != computeFingerprint()
-  }
-
-  private fun computeFingerprint(): String {
-    val digest = MessageDigest.getInstance("SHA-256")
-    fun update(value: Any) {
-      digest.update(value.toString().toByteArray())
-      digest.update(0)
-    }
-
-    update(version.get())
-    update(insertBlankLines.getOrElse(true))
-    blocks.getOrElse(emptySet()).sorted().forEach(::update)
-    // Covers a changed version or a republished snapshot without hashing every jar on every run.
-    sortProgram.files.forEach { file ->
-      update(file.absolutePath)
-      update(file.length())
-      update(file.lastModified())
-    }
-    digest.update(buildScript.get().asFile.readBytes())
-
-    return digest.digest().joinToString("") { "%02x".format(it) }
+    output.get().asFile.writeText("")
   }
 
   private fun MutableList<String>.option(name: String, value: String) {
