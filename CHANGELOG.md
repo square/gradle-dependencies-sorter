@@ -1,6 +1,8 @@
 # gradle-dependencies-sorter
 
 ## Unreleased
+* [Feat]: `sortDependencies` is up-to-date when neither the build script nor the sort inputs (version, options,
+  sorter classpath) have changed since its last successful run.
 
 ## Version 0.21.0
 * [Feat]: sort dependency `constraints` blocks by default.

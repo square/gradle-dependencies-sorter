@@ -38,7 +38,7 @@ class SortDependenciesPlugin : Plugin<Project> {
     }
 
     tasks.register("sortDependencies", SortDependenciesTask::class.java) { t ->
-      t.configure(target, sortApp, extension)
+      t.configure(target, sortApp, layout, extension)
     }
     val checkTask = tasks.register("checkSortDependencies", CheckSortDependenciesTask::class.java) { t ->
       t.configure(target, sortApp, layout, extension)
@@ -59,6 +59,7 @@ class SortDependenciesPlugin : Plugin<Project> {
   private fun SortDependenciesTask.configure(
     project: Project,
     sortApp: Configuration,
+    layout: ProjectLayout,
     extension: SortDependenciesExtension,
   ) {
     buildScript.set(project.buildFile)
@@ -66,6 +67,7 @@ class SortDependenciesPlugin : Plugin<Project> {
     version.set(extension.version)
     insertBlankLines.set(extension.insertBlankLines)
     blocks.set(extension.blocks)
+    output.set(layout.buildDirectory.file("sort-dependencies/sorted-build-script.sha256"))
   }
 
   private fun CheckSortDependenciesTask.configure(

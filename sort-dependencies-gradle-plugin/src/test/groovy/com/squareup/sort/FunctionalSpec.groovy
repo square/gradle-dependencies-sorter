@@ -467,6 +467,105 @@ final class FunctionalSpec extends Specification {
     """).stripIndent()
   }
 
+  def "does not sort again until the build script changes"() {
+    given: 'A build script with unsorted dependencies'
+    def buildScript = dir.resolve('build.gradle')
+    def sorted = normalize("""\
+      plugins {
+        id 'java-library'
+        id 'com.squareup.sort-dependencies'
+      }
+
+      repositories {
+        mavenCentral()
+        maven { url '$REPO' }
+      }
+
+      dependencies {
+        implementation(platform('com.squareup.okhttp3:okhttp-bom:4.10.0'))
+        implementation('com.squareup.okhttp3:okhttp:4.10.0')
+        implementation('com.squareup.okio:okio:3.2.0')
+      }""").stripIndent()
+    Files.writeString(buildScript, BUILD_SCRIPT)
+
+    when: 'We sort dependencies'
+    def result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
+
+    then: 'The sorter rewrote the build script'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains("Sorting '")
+    buildScript.text == sorted
+
+    when: 'We sort again without changing anything'
+    result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
+
+    then: 'The task runs, since its input changed during the last run, but does not start the sorter'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains('is unchanged since it was last sorted.')
+    !result.output.contains("Sorting '")
+
+    when: 'We sort once more'
+    result = build(dir, 'sortDependencies', '--configuration-cache')
+
+    then: 'The task is up-to-date'
+    result.task(':sortDependencies').outcome == TaskOutcome.UP_TO_DATE
+
+    when: 'The build script changes and we sort again'
+    Files.writeString(buildScript, BUILD_SCRIPT)
+    result = build(dir, 'sortDependencies', '--configuration-cache', '--info')
+
+    then: 'The sorter ran again and the dependencies are sorted'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    result.output.contains("Sorting '")
+    buildScript.text == sorted
+  }
+
+  def "sorts again when a sort option changes outside the build script"() {
+    given: 'A build script whose sorted blocks come from a Gradle property'
+    def buildScript = dir.resolve('build.gradle.kts')
+    def script = { String first, String second ->
+      normalize("""\
+        plugins {
+          `java-library`
+          id("com.squareup.sort-dependencies")
+        }
+
+        sortDependencies {
+          providers.gradleProperty("sortBlocks").orNull?.let { blocks(it) }
+        }
+
+        repositories {
+          maven { url = uri("$REPO") }
+        }
+
+        configurations {
+          create("$first")
+          create("$second")
+        }
+        """).stripIndent()
+    }
+    Files.writeString(buildScript, script('z', 'a'))
+
+    when: 'We sort dependencies'
+    def result = build(dir, 'sortDependencies')
+
+    then: 'The task ran'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+
+    when: 'We sort again without changing anything'
+    result = build(dir, 'sortDependencies')
+
+    then: 'The task is up-to-date'
+    result.task(':sortDependencies').outcome == TaskOutcome.UP_TO_DATE
+
+    when: 'Only the sort option changes and we sort again'
+    result = build(dir, 'sortDependencies', '-PsortBlocks=configurations')
+
+    then: 'The task ran again and the configurations block is sorted'
+    result.task(':sortDependencies').outcome == TaskOutcome.SUCCESS
+    buildScript.text == script('a', 'z')
+  }
+
   private static final BUILD_SCRIPT = normalize("""\
     plugins {
       id 'java-library'
